@@ -1,3 +1,6 @@
+using Insightly.Models;
+using Microsoft.EntityFrameworkCore;
+
 namespace Insightly
 {
     public class Program
@@ -5,8 +8,10 @@ namespace Insightly
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            var connStr = builder.Configuration.GetConnectionString("DefaultConnection");
+            builder.Services.AddDbContext<AppDbContext>(options =>
+                options.UseSqlServer(connStr));
             builder.Services.AddControllersWithViews();
-
             var app = builder.Build();
 
             if (!app.Environment.IsDevelopment())
