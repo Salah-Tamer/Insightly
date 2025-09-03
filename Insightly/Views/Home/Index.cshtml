@@ -2,7 +2,61 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container py-5">
+    <!-- Hero Section -->
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold">Welcome to the Articles Platform</h1>
+        <p class="lead text-muted">Read, share, and engage with articles easily</p>
+        <a href="/Articles" class="btn btn-primary btn-lg mt-3">
+            <i class="bi bi-journal-text me-2"></i> Browse Articles
+        </a>
+    </div>
+
+    <!-- Latest Articles -->
+    <div class="row g-4">
+        <div class="col-md-4">
+            <div class="card h-100 card-hover">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">Sample Article 1</h5>
+                    <p class="card-text text-muted ellipsis">
+                        This is a sample article number 1. You can replace it with data from the database.
+                    </p>
+                    <div class="mt-auto d-flex justify-content-between align-items-center">
+                        <span class="badge bg-secondary">#Technology</span>
+                        <a href="#" class="btn btn-sm btn-outline-primary">Read more</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 card-hover">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">Sample Article 2</h5>
+                    <p class="card-text text-muted ellipsis">
+                        This is a sample article number 2. You can replace it with real content from the Articles table.
+                    </p>
+                    <div class="mt-auto d-flex justify-content-between align-items-center">
+                        <span class="badge bg-secondary">#Lifestyle</span>
+                        <a href="#" class="btn btn-sm btn-outline-primary">Read more</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card h-100 card-hover">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">Sample Article 3</h5>
+                    <p class="card-text text-muted ellipsis">
+                        This is a sample article number 3. Later, it will be loaded dynamically from the database.
+                    </p>
+                    <div class="mt-auto d-flex justify-content-between align-items-center">
+                        <span class="badge bg-secondary">#News</span>
+                        <a href="#" class="btn btn-sm btn-outline-primary">Read more</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
