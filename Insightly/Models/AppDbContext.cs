@@ -38,22 +38,22 @@ namespace Insightly.Models
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // Comment
-            //modelBuilder.Entity<Comment>(entity =>
-            //{
-            //    entity.HasKey(c => c.CommentId);
-            //    entity.Property(c => c.Content).IsRequired();
-            //    entity.Property(c => c.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+           
+            modelBuilder.Entity<Comment>(entity =>
+            {
+                entity.HasKey(c => c.CommentId);
+                entity.Property(c => c.Content).IsRequired();
+                entity.Property(c => c.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            //    entity.HasOne(c => c.Author)
-            //        .HasForeignKey(c => c.AuthorId)
-            //        .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e=>e.Author)
+                     .WithMany()
+                    .HasForeignKey(e =>e.AuthorId);
 
-            //    entity.HasOne(c => c.Article)
-            //        .WithMany(a => a.Comments)
-            //        .HasForeignKey(c => c.ArticleId)
-            //        .OnDelete(DeleteBehavior.Cascade);
-            //});
+                entity.HasOne(c => c.Article)
+                    .WithMany(a => a.Comments)
+                    .HasForeignKey(c => c.ArticleId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
 
             // ArticleRead
             modelBuilder.Entity<ArticleRead>(entity =>
