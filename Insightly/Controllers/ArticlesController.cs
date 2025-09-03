@@ -4,7 +4,7 @@ namespace Insightly.Controllers
 {
     public class ArticlesController : Controller
     {
-        public IActionResult Index()
+        public IActionResult Create()
         {
             return View();
         }
