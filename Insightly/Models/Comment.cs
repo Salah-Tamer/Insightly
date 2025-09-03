@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Insightly.Models
 {
@@ -10,6 +11,6 @@ namespace Insightly.Models
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         [Required]
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
-        public string AuthorId { get; set; } =string.Empty;
+        public int AuthorId { get; set; }
     }
 }

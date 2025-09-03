@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Insightly.Models
 {
@@ -13,7 +14,8 @@ namespace Insightly.Models
         public string Content { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
-        public int AuthorId { get; set; }
+        [ForeignKey("")]
+        public int UserId { get; set; }
         public List<Comment> Comments { get; set; } = new List<Comment>();
         public Article() { }
         /*public List<string> Tags { get; set; }
