@@ -3,10 +3,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Insightly.Models
 {
-    public class AppDbContext: IdentityDbContext
+    public class AppDbContext: IdentityDbContext<ApplicationUser>
     {
         public AppDbContext(DbContextOptions<AppDbContext> options): base(options) { }
-        public DbSet<User> Users { get; set; }
         public DbSet<Article> Articles { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<ArticleRead> ArticleReads { get; set; }
@@ -16,12 +15,12 @@ namespace Insightly.Models
             base.OnModelCreating(modelBuilder);
 
             // User
-            modelBuilder.Entity<User>(entity =>
+            modelBuilder.Entity<ApplicationUser>(entity =>
             {
                 entity.HasKey(u => u.Id);
                 entity.Property(u => u.Name).IsRequired().HasMaxLength(100);
                 entity.Property(u => u.Email).IsRequired();
-                entity.Property(u => u.Password).IsRequired();
+                entity.Property(u => u.PasswordHash).IsRequired();
                 entity.Property(u => u.Gender).IsRequired().HasMaxLength(10);
                 entity.Property(u => u.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             });
@@ -36,7 +35,7 @@ namespace Insightly.Models
                 entity.HasOne(a => a.Author)
                     .WithMany(u => u.Articles)
                     .HasForeignKey(a => a.AuthorId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
            
@@ -53,9 +52,10 @@ namespace Insightly.Models
                 entity.HasOne(c => c.Article)
                     .WithMany(a => a.Comments)
                     .HasForeignKey(c => c.ArticleId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
+            // ArticleRead
             // ArticleRead
             modelBuilder.Entity<ArticleRead>(entity =>
             {
@@ -70,7 +70,7 @@ namespace Insightly.Models
                 entity.HasOne(ar => ar.User)
                     .WithMany(u => u.ReadArticles)
                     .HasForeignKey(ar => ar.UserId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }
