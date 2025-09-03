@@ -14,15 +14,15 @@ namespace Insightly.Models
         
         [Required]
         public DateTime? UpdatedAt { get; set; }
-        
+
         [Required]
-        public int AuthorId { get; set; }
+        public string AuthorId { get; set; } = string.Empty;
         
         [Required]
         public int ArticleId { get; set; }
         
         [ForeignKey("AuthorId")]
-        public virtual User Author { get; set; } = null!;
+        public virtual ApplicationUser Author { get; set; } = null!;
         
         [ForeignKey("ArticleId")]
         public virtual Article Article { get; set; } = null!;

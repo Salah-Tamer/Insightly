@@ -18,10 +18,10 @@ namespace Insightly.Models
         public DateTime? UpdatedAt { get; set; }
         
         [Required]
-        public int AuthorId { get; set; }
+        public string AuthorId { get; set; }
         
         [ForeignKey("AuthorId")]
-        public virtual User Author { get; set; } = null!;
+        public virtual ApplicationUser Author { get; set; } = null!;
         public virtual List<Comment> Comments { get; set; } = new List<Comment>();
         
         /*public Article() { }
