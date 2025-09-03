@@ -53,41 +53,10 @@
                         </div>
                     </form>
                 </div>
-            </div>
-            
-            <!-- External Logins Section -->
-            @if ((Model.ExternalLogins?.Count ?? 0) != 0)
-            {
-                <div class="card mt-4">
-                    <div class="card-body p-4">
-                        <h5 class="card-title text-center mb-3">Use another service to log in</h5>
-                        
-                        <form id="external-account" asp-page="./ExternalLogin" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="form-horizontal">
-                            <div class="d-grid gap-2">
-                                @foreach (var provider in Model.ExternalLogins!)
-                                {
-                                    <button type="submit" class="btn btn-outline-primary" name="provider" value="@provider.Name" title="Log in using your @provider.DisplayName account">
-                                        <i class="bi bi-@provider.Name.ToLower() me-2"></i>@provider.DisplayName
-                                    </button>
-
-}
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            }
-            else
-            {
-                <div class="alert alert-info mt-4 text-center">
-                    <p class="mb-0">
-                        There are no external authentication services configured. See this 
-                        <a href="https://go.microsoft.com/fwlink/?LinkID=532715" class="alert-link">article about setting up this ASP.NET application to support logging in via external services</a>.
-                    </p>
-                </div>
-            }
+            </div>         
             
             <div class="mt-4 p-3 text-center text-muted">
-                <p class="small mb-0">© 2023 Articles Portal. All rights reserved.</p>
+                <p class="small mb-0">© 2025 Articles Portal. All rights reserved.</p>
             </div>
         </div>
     </div>
