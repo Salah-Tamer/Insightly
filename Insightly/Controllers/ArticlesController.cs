@@ -11,6 +11,13 @@ namespace Insightly.Controllers
         private readonly AppDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
 
+        public ArticlesController(AppDbContext context, UserManager<ApplicationUser> userManager)
+        {
+            _context = context;
+            _userManager = userManager;
+        }
+
+        [Authorize(Roles = "User")]
         public IActionResult Create()
         {
             return View();
@@ -43,7 +50,7 @@ namespace Insightly.Controllers
                 await _context.SaveChangesAsync();
 
                 TempData["SuccessMessage"] = "Article created successfully!";
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction("Index", "Home");
             }
 
             return View(article);
