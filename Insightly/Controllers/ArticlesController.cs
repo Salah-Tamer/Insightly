@@ -10,6 +10,7 @@ namespace Insightly.Controllers
     {
         private readonly AppDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+
         public IActionResult Create()
         {
             return View();
