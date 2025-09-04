@@ -1,4 +1,6 @@
-﻿@{
+﻿@model List<Article>
+
+@{
     ViewData["Title"] = "Home Page";
 }
 
@@ -14,50 +16,25 @@
 
     <!-- Latest Articles -->
     <div class="row g-4">
-        <div class="col-md-4">
-            <div class="card h-100 card-hover">
-                <div class="card-body d-flex flex-column">
-                    <h5 class="card-title">Sample Article 1</h5>
-                    
-                    <p class="card-text text-muted ellipsis">
-                        This is a sample article number 1. You can replace it with data from the database.
-                    </p>
-                    <div class="mt-auto d-flex justify-content-between align-items-center">
-                        <span class="badge bg-secondary">#Technology</span>
-                        <a href="#" class="btn btn-sm btn-outline-primary">Read more</a>
-                    </div>
-                </div>
-            </div>
-        </div>
+        @foreach (var article in Model)
+        {
+            <div class="col-md-4">
+                <div class="card h-100 card-hover">
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">@article.Title</h5>
 
-        <div class="col-md-4">
-            <div class="card h-100 card-hover">
-                <div class="card-body d-flex flex-column">
-                    <h5 class="card-title">Sample Article 2</h5>
-                    <p class="card-text text-muted ellipsis">
-                        This is a sample article number 2. You can replace it with real content from the Articles table.
-                    </p>
-                    <div class="mt-auto d-flex justify-content-between align-items-center">
-                        <span class="badge bg-secondary">#Lifestyle</span>
-                        <a href="#" class="btn btn-sm btn-outline-primary">Read more</a>
+                        <p class="card-text text-muted ellipsis">
+                            @article.Content.Substring(0, Math.Min(100, article.Content.Length))...
+                        </p>
+                        <div class="mt-auto d-flex justify-content-between align-items-center">
+                            <span class="badge bg-secondary">
+                                @article.Author.UserName
+                            </span>
+                            <a href="/Articles/Details/@article.ArticleId" class="btn btn-sm btn-outline-primary">Read more</a>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div class="col-md-4">
-            <div class="card h-100 card-hover">
-                <div class="card-body d-flex flex-column">
-                    <h5 class="card-title">Sample Article 3</h5>
-                    <p class="card-text text-muted ellipsis">
-                        This is a sample article number 3. Later, it will be loaded dynamically from the database.
-                    </p>
-                    <div class="mt-auto d-flex justify-content-between align-items-center">
-                        <span class="badge bg-secondary">#News</span>
-                        <a href="#" class="btn btn-sm btn-outline-primary">Read more</a>
-                    </div>
-                </div>
-            </div>
-        </div>
+        }
     </div>
 </div>
