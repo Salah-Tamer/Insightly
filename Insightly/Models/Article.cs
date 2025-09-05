@@ -18,11 +18,19 @@ namespace Insightly.Models
         public DateTime? UpdatedAt { get; set; }
         
         [Required]
-        public string AuthorId { get; set; }
+        public string AuthorId { get; set; } = string.Empty;
         
+        // Navigation properties
         [ForeignKey("AuthorId")]
         public virtual ApplicationUser Author { get; set; } = null!;
         public virtual List<Comment> Comments { get; set; } = new List<Comment>();
         public virtual List<Vote> Votes { get; set; } = new List<Vote>();
+        
+        public Article() { }
+        /*public List<string> Tags { get; set; }
+        public bool IsPublished { get; set; }
+        public int ViewCount { get; set; }
+        public int Likes { get; set; }
+        */
     }
 }

@@ -17,7 +17,7 @@ namespace Insightly.Controllers
             _userManager = userManager;
         }
 
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = "Admin,User")]
         public IActionResult Create()
         {
             return View();
@@ -25,7 +25,7 @@ namespace Insightly.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "User")]
+        [Authorize(Roles = "Admin,User")]
         public async Task<IActionResult> Create([FromForm] string title, [FromForm] string content)
         {
             var article = new Article

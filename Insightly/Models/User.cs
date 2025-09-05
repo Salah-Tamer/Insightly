@@ -1,23 +1,23 @@
-﻿using Microsoft.AspNetCore.Identity;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Insightly.Models
 {
-    public class ApplicationUser : IdentityUser
+    public class User
     {
+        public int Id { get; set; }
         [Required]
         [StringLength(100)]
         public string Name { get; set; } = string.Empty;
-
         [Required]
-        [StringLength(10)]
-        public string Gender { get; set; } = string.Empty;
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+        [Required]
+        public string Password { get; set; }
+        [Required]
+        public string Gender { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-        public virtual List<Article> Articles { get; set; } = new();
-        public virtual List<ArticleRead> ReadArticles { get; set; } = new();
-        public virtual List<Comment> Comments { get; set; } = new(); 
-        public virtual List<Vote> Votes { get; set; } = new();
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public List<Article> Articles { get; set; } = new List<Article>();
+        public List<Comment> Comments { get; set; } = new List<Comment>();
     }
 }
