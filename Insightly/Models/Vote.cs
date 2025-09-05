@@ -3,16 +3,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Insightly.Models
 {
-    public enum ReactionType
+    public class Vote
     {
-        None = 0,
-        Like = 1,
-        Dislike = 2
-    }
-
-    public class Reaction
-    {
-        public int ReactionId { get; set; }
+        public int VoteId { get; set; }
 
         [Required]
         public string UserId { get; set; } = string.Empty;
@@ -20,9 +13,8 @@ namespace Insightly.Models
         [Required]
         public int ArticleId { get; set; }
 
-        public ReactionType Type { get; set; } = ReactionType.None;
-      
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        [Required]
+        public bool IsUpvote { get; set; } 
 
         [ForeignKey("UserId")]
         public virtual ApplicationUser User { get; set; } = null!;
