@@ -9,6 +9,7 @@ namespace Insightly.Models
         public DbSet<Article> Articles { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<ArticleRead> ArticleReads { get; set; }
+        public DbSet<Reaction> Reactions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -70,6 +71,22 @@ namespace Insightly.Models
                 entity.HasOne(ar => ar.User)
                     .WithMany(u => u.ReadArticles)
                     .HasForeignKey(ar => ar.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+            modelBuilder.Entity<Reaction>(entity =>
+            {
+                entity.HasKey(c => c.ReactionId);
+                entity.Property(c => c.ReactionId).IsRequired();
+                entity.Property(c => c.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasOne(c => c.User)
+                    .WithMany()
+                    .HasForeignKey(c => c.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(c => c.Article)
+                    .WithMany(a => a.Reactions)
+                    .HasForeignKey(c => c.ArticleId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
         }

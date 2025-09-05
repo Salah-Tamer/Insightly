@@ -1,0 +1,135 @@
+﻿@model Article
+
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<div class="container py-4">
+    <!-- Title & Author -->
+    <div class="mb-4">
+        <h1 class="fw-bold">@Model.Title</h1>
+        <p class="text-muted">
+            By <strong>@Model.Author.UserName</strong> on @Model.CreatedAt.ToString("dd MMM yyyy")
+        </p>
+    </div>
+
+    <!-- Content -->
+    <div class="mb-5">
+        <p>@Model.Content</p>
+    </div>
+
+    <!-- Reactions -->
+    <div class="mb-4">
+        <button class="btn btn-sm btn-outline-success me-2" id="btn-like" data-article-id="@Model.ArticleId">
+            👍 Like (<span id="likes-count">@ViewBag.Likes</span>)
+        </button>
+
+        <button class="btn btn-sm btn-outline-danger" id="btn-dislike" data-article-id="@Model.ArticleId">
+            👎 Dislike (<span id="dislikes-count">@ViewBag.Dislikes</span>)
+        </button>
+    </div>
+
+    <!-- Comments -->
+    <div class="mb-4">
+        <h4>Comments (<span id="comments-count">@ViewBag.CommentsCount</span>)</h4>
+
+        <ul class="list-group" id="comments-list">
+            @foreach (var comment in Model.Comments.OrderByDescending(c => c.CreatedAt))
+            {
+                <li class="list-group-item">
+                    <p>@comment.Content</p>
+                    <small class="text-muted">
+                        By <strong>@comment.Author.UserName</strong> on @comment.CreatedAt.ToString("dd MMM yyyy HH:mm")
+                    </small>
+                </li>
+            }
+        </ul>
+    </div>
+
+    <!-- Add Comment -->
+    @if (User.Identity != null && User.Identity.IsAuthenticated)
+    {
+        <form id="comment-form">
+            <input type="hidden" name="articleId" value="@Model.ArticleId" />
+
+            <div class="mb-3">
+                <textarea name="content" id="comment-content" class="form-control" rows="3" placeholder="Write your comment..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Comment</button>
+        </form>
+    }
+    else
+    {
+        <p><a href="/Account/Login">Login</a> to add a comment.</p>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        async function react(articleId, type) {
+            await fetch(`/Reactions/React?articleId=${articleId}&type=${type}`, {
+                method: 'POST'
+            });
+            loadCounts(articleId);
+        }
+
+        async function loadCounts(articleId) {
+            const res = await fetch(`/Reactions/Count?articleId=${articleId}`);
+            const data = await res.json();
+
+            document.getElementById('likes-count').innerText = data.likes;
+            document.getElementById('dislikes-count').innerText = data.dislikes;
+        }
+
+        document.getElementById("btn-like").addEventListener("click", function () {
+            const articleId = this.getAttribute("data-article-id");
+            react(articleId, "Like");
+        });
+
+        document.getElementById("btn-dislike").addEventListener("click", function () {
+            const articleId = this.getAttribute("data-article-id");
+            react(articleId, "Dislike");
+        });
+
+        // Load comments dynamically
+        async function loadComments(articleId) {
+            const res = await fetch(`/Comments/List?articleId=${articleId}`);
+            const data = await res.json();
+
+            const list = document.getElementById("comments-list");
+            list.innerHTML = "";
+
+            data.forEach(c => {
+                const li = document.createElement("li");
+                li.classList.add("list-group-item");
+                li.innerHTML = `<p>${c.content}</p>
+                                <small class="text-muted">By <strong>${c.author}</strong> on ${c.createdAt}</small>`;
+                list.appendChild(li);
+            });
+
+            document.getElementById("comments-count").innerText = data.length;
+        }
+
+        // Add comment with AJAX
+        document.getElementById("comment-form")?.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const articleId = this.querySelector("input[name=articleId]").value;
+            const content = document.getElementById("comment-content").value;
+
+            const res = await fetch("/Comments/Add", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: `articleId=${articleId}&content=${encodeURIComponent(content)}`
+            });
+
+            if (res.ok) {
+                document.getElementById("comment-content").value = "";
+                loadComments(articleId);
+            }
+        });
+
+        // Initial load
+        loadComments(@Model.ArticleId);
+    </script>
+}

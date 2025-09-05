@@ -23,7 +23,7 @@ namespace Insightly.Models
         [ForeignKey("AuthorId")]
         public virtual ApplicationUser Author { get; set; } = null!;
         public virtual List<Comment> Comments { get; set; } = new List<Comment>();
-        
+        public virtual List<Reaction> Reactions { get; set; }= new List<Reaction>();
         /*public Article() { }
         public List<string> Tags { get; set; }
         public bool IsPublished { get; set; }
