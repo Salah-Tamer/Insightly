@@ -1,4 +1,4 @@
-﻿using Insightly.Migrations;
+﻿//using Insightly.Migrations;
 using Insightly.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
