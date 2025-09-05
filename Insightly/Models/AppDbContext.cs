@@ -9,6 +9,7 @@ namespace Insightly.Models
         public DbSet<Article> Articles { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<ArticleRead> ArticleReads { get; set; }
+        public DbSet<Vote> Votes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -56,7 +57,6 @@ namespace Insightly.Models
             });
 
             // ArticleRead
-            // ArticleRead
             modelBuilder.Entity<ArticleRead>(entity =>
             {
                 entity.HasKey(ar => ar.Id);
@@ -70,6 +70,25 @@ namespace Insightly.Models
                 entity.HasOne(ar => ar.User)
                     .WithMany(u => u.ReadArticles)
                     .HasForeignKey(ar => ar.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+            modelBuilder.Entity<Vote>(entity =>
+            {
+                entity.HasKey(v => v.VoteId);
+                entity.Property(v => v.VoteId).IsRequired();
+
+                entity.HasIndex(v => new { v.UserId, v.ArticleId })
+                    .IsUnique()
+                    .HasDatabaseName("IX_Votes_UserId_ArticleId");
+
+                entity.HasOne(v => v.User)
+                    .WithMany()
+                    .HasForeignKey(v => v.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(v => v.Article)
+                    .WithMany(a => a.Votes)
+                    .HasForeignKey(v => v.ArticleId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
         }

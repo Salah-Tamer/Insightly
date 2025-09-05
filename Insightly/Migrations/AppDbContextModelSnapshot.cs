@@ -17,7 +17,7 @@ namespace Insightly.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.0")
+                .HasAnnotation("ProductVersion", "8.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -177,6 +177,9 @@ namespace Insightly.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CommentId"));
 
+                    b.Property<string>("ApplicationUserId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<int>("ArticleId")
                         .HasColumnType("int");
 
@@ -199,11 +202,47 @@ namespace Insightly.Migrations
 
                     b.HasKey("CommentId");
 
+                    b.HasIndex("ApplicationUserId");
+
                     b.HasIndex("ArticleId");
 
                     b.HasIndex("AuthorId");
 
                     b.ToTable("Comments");
+                });
+
+            modelBuilder.Entity("Insightly.Models.Vote", b =>
+                {
+                    b.Property<int>("VoteId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VoteId"));
+
+                    b.Property<string>("ApplicationUserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("ArticleId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsUpvote")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("VoteId");
+
+                    b.HasIndex("ApplicationUserId");
+
+                    b.HasIndex("ArticleId");
+
+                    b.HasIndex("UserId", "ArticleId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Votes_UserId_ArticleId");
+
+                    b.ToTable("Votes");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -286,10 +325,12 @@ namespace Insightly.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
                     b.Property<string>("LoginProvider")
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
 
                     b.Property<string>("ProviderKey")
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
 
                     b.Property<string>("ProviderDisplayName")
                         .HasColumnType("nvarchar(max)");
@@ -326,10 +367,12 @@ namespace Insightly.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("LoginProvider")
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
 
                     b.Property<string>("Name")
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
 
                     b.Property<string>("Value")
                         .HasColumnType("nvarchar(max)");
@@ -371,6 +414,10 @@ namespace Insightly.Migrations
 
             modelBuilder.Entity("Insightly.Models.Comment", b =>
                 {
+                    b.HasOne("Insightly.Models.ApplicationUser", null)
+                        .WithMany("Comments")
+                        .HasForeignKey("ApplicationUserId");
+
                     b.HasOne("Insightly.Models.Article", "Article")
                         .WithMany("Comments")
                         .HasForeignKey("ArticleId")
@@ -386,6 +433,29 @@ namespace Insightly.Migrations
                     b.Navigation("Article");
 
                     b.Navigation("Author");
+                });
+
+            modelBuilder.Entity("Insightly.Models.Vote", b =>
+                {
+                    b.HasOne("Insightly.Models.ApplicationUser", null)
+                        .WithMany("Votes")
+                        .HasForeignKey("ApplicationUserId");
+
+                    b.HasOne("Insightly.Models.Article", "Article")
+                        .WithMany("Votes")
+                        .HasForeignKey("ArticleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Insightly.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Article");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -443,12 +513,18 @@ namespace Insightly.Migrations
                 {
                     b.Navigation("Articles");
 
+                    b.Navigation("Comments");
+
                     b.Navigation("ReadArticles");
+
+                    b.Navigation("Votes");
                 });
 
             modelBuilder.Entity("Insightly.Models.Article", b =>
                 {
                     b.Navigation("Comments");
+
+                    b.Navigation("Votes");
                 });
 #pragma warning restore 612, 618
         }
