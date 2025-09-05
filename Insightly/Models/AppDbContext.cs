@@ -46,9 +46,10 @@ namespace Insightly.Models
                 entity.Property(c => c.Content).IsRequired();
                 entity.Property(c => c.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                entity.HasOne(e=>e.Author)
-                     .WithMany()
-                    .HasForeignKey(e =>e.AuthorId);
+                entity.HasOne(c => c.Author)
+                    .WithMany(u => u.Comments)
+                    .HasForeignKey(c => c.AuthorId)
+                    .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(c => c.Article)
                     .WithMany(a => a.Comments)
@@ -82,7 +83,7 @@ namespace Insightly.Models
                     .HasDatabaseName("IX_Votes_UserId_ArticleId");
 
                 entity.HasOne(v => v.User)
-                    .WithMany()
+                    .WithMany(u => u.Votes)
                     .HasForeignKey(v => v.UserId)
                     .OnDelete(DeleteBehavior.Restrict);
 

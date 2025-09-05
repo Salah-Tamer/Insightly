@@ -18,15 +18,17 @@
         <p>@Model.Content</p>
     </div>
 
-    <!-- Reactions -->
+    <!-- Voting -->
     <div class="mb-4">
-        <button class="btn btn-sm btn-outline-success me-2" id="btn-like" data-article-id="@Model.ArticleId">
-            👍 Like (<span id="likes-count">@ViewBag.Likes</span>)
-        </button>
-
-        <button class="btn btn-sm btn-outline-danger" id="btn-dislike" data-article-id="@Model.ArticleId">
-            👎 Dislike (<span id="dislikes-count">@ViewBag.Dislikes</span>)
-        </button>
+        <div class="d-flex align-items-center gap-3">
+            <span class="h5 mb-0">Score: <span id="net-score">@ViewBag.NetScore</span></span>
+            <button class="btn btn-sm btn-outline-success" id="btn-upvote" data-article-id="@Model.ArticleId">
+                ⬆️ Upvote
+            </button>
+            <button class="btn btn-sm btn-outline-danger" id="btn-downvote" data-article-id="@Model.ArticleId">
+                ⬇️ Downvote
+            </button>
+        </div>
     </div>
 
     <!-- Comments -->
@@ -66,29 +68,28 @@
 
 @section Scripts {
     <script>
-        async function react(articleId, type) {
-            await fetch(`/Reactions/React?articleId=${articleId}&type=${type}`, {
+        async function vote(articleId, isUpvote) {
+            await fetch(`/Votes/Vote?articleId=${articleId}&isUpvote=${isUpvote}`, {
                 method: 'POST'
             });
-            loadCounts(articleId);
+            loadScore(articleId);
         }
 
-        async function loadCounts(articleId) {
-            const res = await fetch(`/Reactions/Count?articleId=${articleId}`);
+        async function loadScore(articleId) {
+            const res = await fetch(`/Votes/Count?articleId=${articleId}`);
             const data = await res.json();
 
-            document.getElementById('likes-count').innerText = data.likes;
-            document.getElementById('dislikes-count').innerText = data.dislikes;
+            document.getElementById('net-score').innerText = data.netScore;
         }
 
-        document.getElementById("btn-like").addEventListener("click", function () {
+        document.getElementById("btn-upvote").addEventListener("click", function () {
             const articleId = this.getAttribute("data-article-id");
-            react(articleId, "Like");
+            vote(articleId, true);
         });
 
-        document.getElementById("btn-dislike").addEventListener("click", function () {
+        document.getElementById("btn-downvote").addEventListener("click", function () {
             const articleId = this.getAttribute("data-article-id");
-            react(articleId, "Dislike");
+            vote(articleId, false);
         });
 
         // Load comments dynamically

@@ -1,5 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Insightly.Models
 {
@@ -13,8 +13,7 @@ namespace Insightly.Models
         [Required]
         public int ArticleId { get; set; }
 
-        [Required]
-        public bool IsUpvote { get; set; } 
+        public bool IsUpvote { get; set; }
 
         [ForeignKey("UserId")]
         public virtual ApplicationUser User { get; set; } = null!;
@@ -22,5 +21,4 @@ namespace Insightly.Models
         [ForeignKey("ArticleId")]
         public virtual Article Article { get; set; } = null!;
     }
-
 }
