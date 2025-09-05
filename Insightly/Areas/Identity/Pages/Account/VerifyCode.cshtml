@@ -1,0 +1,204 @@
+﻿@page
+@model VerifyCodeModel
+@{
+    ViewData["Title"] = "Verify Email";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <div class="verify-icon mb-3">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <h2 class="card-title">Verify Your Email</h2>
+                        <p class="text-muted">We've sent a 5-digit verification code to<br /><strong>@Model.UserEmail</strong></p>
+                    </div>
+
+                    <form method="post" id="verifyForm">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3" role="alert"></div>
+
+                        <div class="code-input-container mb-4">
+                            <div class="code-inputs d-flex justify-content-center gap-2">
+                                <input type="text" maxlength="1" class="code-digit form-control text-center" data-index="0" />
+                                <input type="text" maxlength="1" class="code-digit form-control text-center" data-index="1" />
+                                <input type="text" maxlength="1" class="code-digit form-control text-center" data-index="2" />
+                                <input type="text" maxlength="1" class="code-digit form-control text-center" data-index="3" />
+                                <input type="text" maxlength="1" class="code-digit form-control text-center" data-index="4" />
+                            </div>
+                            <input asp-for="Input.VerificationCode" type="hidden" />
+                            <span asp-validation-for="Input.VerificationCode" class="text-danger small text-center d-block mt-2"></span>
+                        </div>
+
+                        <button type="submit" class="w-100 btn btn-lg btn-primary mb-3">
+                            <i class="bi bi-check-circle me-1"></i>Verify Email
+                        </button>
+
+                        <div class="text-center">
+                            <p class="mb-2 text-muted small">Didn't receive the code?</p>
+                            <button type="submit" asp-page-handler="ResendCode" class="btn btn-link p-0 text-decoration-none">
+                                <i class="bi bi-arrow-clockwise me-1"></i>Resend Code
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="mt-4 text-center">
+                        <p class="text-muted small mb-0">
+                            <i class="bi bi-clock me-1"></i>Code expires in <span id="timer" class="fw-bold">15:00</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const codeInputs = document.querySelectorAll('.code-digit');
+            const hiddenInput = document.getElementById('Input_VerificationCode');
+
+            // Handle input and auto-focus next field
+            codeInputs.forEach((input, index) => {
+                input.addEventListener('input', function(e) {
+                    // Allow only numbers
+                    this.value = this.value.replace(/[^0-9]/g, '');
+
+                    // Move to next input if current has value
+                    if (this.value && index < codeInputs.length - 1) {
+                        codeInputs[index + 1].focus();
+                    }
+
+                    // Update hidden field with combined code
+                    updateHiddenField();
+                });
+
+                // Handle backspace
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Backspace' && !this.value && index > 0) {
+                        codeInputs[index - 1].focus();
+                    }
+                });
+
+                // Handle paste
+                input.addEventListener('paste', function(e) {
+                    e.preventDefault();
+                    const pastedData = e.clipboardData.getData('text').replace(/[^0-9]/g, '');
+
+                    if (pastedData.length === 5) {
+                        pastedData.split('').forEach((digit, i) => {
+                            if (codeInputs[i]) {
+                                codeInputs[i].value = digit;
+                            }
+                        });
+                        updateHiddenField();
+                        codeInputs[4].focus();
+                    }
+                });
+            });
+
+            function updateHiddenField() {
+                let code = '';
+                codeInputs.forEach(input => {
+                    code += input.value;
+                });
+                hiddenInput.value = code;
+            }
+
+            // Timer countdown
+            let timeLeft = 900; // 15 minutes in seconds
+            const timerElement = document.getElementById('timer');
+
+            const timer = setInterval(function() {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+
+                timerElement.textContent =
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    timerElement.textContent = 'Expired';
+                    timerElement.classList.add('text-danger');
+                    document.querySelector('button[type="submit"]').disabled = true;
+                }
+
+                timeLeft--;
+            }, 1000);
+
+            // Auto-focus first input
+            codeInputs[0].focus();
+        });
+    </script>
+}
+
+<style>
+    body {
+        background: #f8f9fb;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+    }
+
+    .verify-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 36px;
+        color: white;
+    }
+
+    .code-digit {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+        font-weight: bold;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+        .code-digit:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+
+    .btn {
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+    }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b4299 100%);
+        }
+
+    (max-width: 576px) {
+        .code-digit
+
+    {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+    }
+
+    }
+</style>
