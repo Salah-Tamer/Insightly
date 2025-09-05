@@ -9,7 +9,7 @@ namespace Insightly.Models
         public DbSet<Article> Articles { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<ArticleRead> ArticleReads { get; set; }
-        public DbSet<Reaction> Reactions { get; set; }
+        public DbSet<Vote> Votes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -57,7 +57,6 @@ namespace Insightly.Models
             });
 
             // ArticleRead
-            // ArticleRead
             modelBuilder.Entity<ArticleRead>(entity =>
             {
                 entity.HasKey(ar => ar.Id);
@@ -73,20 +72,23 @@ namespace Insightly.Models
                     .HasForeignKey(ar => ar.UserId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
-            modelBuilder.Entity<Reaction>(entity =>
+            modelBuilder.Entity<Vote>(entity =>
             {
-                entity.HasKey(c => c.ReactionId);
-                entity.Property(c => c.ReactionId).IsRequired();
-                entity.Property(c => c.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.HasKey(v => v.VoteId);
+                entity.Property(v => v.VoteId).IsRequired();
 
-                entity.HasOne(c => c.User)
+                entity.HasIndex(v => new { v.UserId, v.ArticleId })
+                    .IsUnique()
+                    .HasDatabaseName("IX_Votes_UserId_ArticleId");
+
+                entity.HasOne(v => v.User)
                     .WithMany()
-                    .HasForeignKey(c => c.UserId)
+                    .HasForeignKey(v => v.UserId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasOne(c => c.Article)
-                    .WithMany(a => a.Reactions)
-                    .HasForeignKey(c => c.ArticleId)
+                entity.HasOne(v => v.Article)
+                    .WithMany(a => a.Votes)
+                    .HasForeignKey(v => v.ArticleId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
         }
