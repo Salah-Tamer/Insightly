@@ -50,7 +50,7 @@ namespace Insightly.Controllers
             {
                 id = comment.CommentId,
                 content = comment.Content,
-                author = user.UserName,
+                author = user.Name,
                 createdAt = comment.CreatedAt.ToString("dd MMM yyyy HH:mm")
             });
         }
@@ -67,7 +67,7 @@ namespace Insightly.Controllers
                 {
                     id = c.CommentId,
                     content = c.Content,
-                    author = c.Author.UserName,
+                    author = c.Author.Name,
                     createdAt = c.CreatedAt.ToString("dd MMM yyyy HH:mm")
                 })
                 .ToListAsync();

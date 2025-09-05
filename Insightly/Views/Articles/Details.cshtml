@@ -9,7 +9,7 @@
     <div class="mb-4">
         <h1 class="fw-bold">@Model.Title</h1>
         <p class="text-muted">
-            By <strong>@Model.Author.UserName</strong> on @Model.CreatedAt.ToString("dd MMM yyyy")
+            By <strong>@Model.Author.Name</strong> on @Model.CreatedAt.ToString("dd MMM yyyy")
         </p>
     </div>
 
@@ -41,7 +41,7 @@
                 <li class="list-group-item">
                     <p>@comment.Content</p>
                     <small class="text-muted">
-                        By <strong>@comment.Author.UserName</strong> on @comment.CreatedAt.ToString("dd MMM yyyy HH:mm")
+                        By <strong>@comment.Author.Name</strong> on @comment.CreatedAt.ToString("dd MMM yyyy HH:mm")
                     </small>
                 </li>
             }
