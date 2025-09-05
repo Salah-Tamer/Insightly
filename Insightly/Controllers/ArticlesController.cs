@@ -55,5 +55,26 @@ namespace Insightly.Controllers
 
             return View(article);
         }
+        public async Task<IActionResult> Details(int id)
+        {
+            var article = await _context.Articles
+                .Include(a => a.Author)
+                .Include(a => a.Comments)
+                    .ThenInclude(c => c.Author)
+                .Include(a => a.Reactions)
+                .FirstOrDefaultAsync(a => a.ArticleId == id);
+
+            if (article == null)
+            {
+                return NotFound();
+            }
+
+
+            ViewBag.Likes = article.Reactions.Count(r => r.Type == ReactionType.Like);
+            ViewBag.Dislikes = article.Reactions.Count(r => r.Type == ReactionType.Dislike);
+            ViewBag.CommentsCount = article.Comments.Count;
+
+            return View(article);
+        }
     }
 }
