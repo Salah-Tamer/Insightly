@@ -1,8 +1,8 @@
-﻿using Insightly.Models;
+using Insightly.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace Insightly.Controllers.Api
+namespace Insightly.Controllers
 {
     public class SearchController : Controller
     {
@@ -13,11 +13,12 @@ namespace Insightly.Controllers.Api
             _context = context;
         }
 
-        // GET: /Articles/Search?query=health
-        public async Task<IActionResult> Index(string query)
+        // GET: /Search - Browse all articles
+        public async Task<IActionResult> Index()
         {
             var articles = await _context.Articles
-                .Where(a => string.IsNullOrEmpty(query) || a.Title.Contains(query))
+                .Include(a => a.Author)
+                .OrderByDescending(a => a.CreatedAt)
                 .ToListAsync();
 
             return View(articles); 
