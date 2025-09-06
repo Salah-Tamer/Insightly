@@ -12,14 +12,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Insightly.Models;
-using Insightly.Services;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Http;
 
 namespace Insightly.Areas.Identity.Pages.Account
 {
@@ -30,24 +27,18 @@ namespace Insightly.Areas.Identity.Pages.Account
         private readonly IUserStore<ApplicationUser> _userStore;
         private readonly IUserEmailStore<ApplicationUser> _emailStore;
         private readonly ILogger<RegisterModel> _logger;
-        private readonly IEmailSender _emailSender;
-        private readonly IVerificationCodeService _verificationCodeService;
 
         public RegisterModel(
             UserManager<ApplicationUser> userManager,
             IUserStore<ApplicationUser> userStore,
             SignInManager<ApplicationUser> signInManager,
-            ILogger<RegisterModel> logger,
-            IEmailSender emailSender,
-            IVerificationCodeService verificationCodeService)
+            ILogger<RegisterModel> logger)
         {
             _userManager = userManager;
             _userStore = userStore;
             _emailStore = GetEmailStore();
             _signInManager = signInManager;
             _logger = logger;
-            _emailSender = emailSender;
-            _verificationCodeService = verificationCodeService;
         }
 
         [BindProperty]
@@ -112,38 +103,12 @@ namespace Insightly.Areas.Identity.Pages.Account
 
                     await _userManager.AddToRoleAsync(user, "User");
 
-                    // Generate 5-digit verification code
-                    var userId = await _userManager.GetUserIdAsync(user);
-                    var verificationCode = await _verificationCodeService.GenerateCodeAsync(userId);
+                    user.EmailConfirmed = true;
+                    await _userManager.UpdateAsync(user);
 
-                    // Send email with verification code
-                    var emailSubject = "Verify your email - Your verification code";
-                    var emailBody = $@"
-                        <html>
-                        <body style='font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;'>
-                            <div style='max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
-                                <h2 style='color: #333; text-align: center;'>Email Verification</h2>
-                                <p style='color: #666; font-size: 16px;'>Hello {user.Name},</p>
-                                <p style='color: #666; font-size: 16px;'>Thank you for registering with Insightly. Please use the following verification code to complete your registration:</p>
-                                <div style='background-color: #f8f9fb; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;'>
-                                    <h1 style='color: #007bff; letter-spacing: 8px; font-size: 36px; margin: 0;'>{verificationCode}</h1>
-                                </div>
-                                <p style='color: #999; font-size: 14px; text-align: center;'>This code will expire in 15 minutes</p>
-                                <hr style='border: none; border-top: 1px solid #eee; margin: 30px 0;'>
-                                <p style='color: #999; font-size: 12px; text-align: center;'>If you didn't request this verification code, please ignore this email.</p>
-                            </div>
-                        </body>
-                        </html>";
+                    await _signInManager.SignInAsync(user, isPersistent: false);
 
-                    await _emailSender.SendEmailAsync(Input.Email, emailSubject, emailBody);
-
-                    // Store user ID in TempData to use in verification page
-                    TempData["UserId"] = userId;
-                    TempData["UserEmail"] = Input.Email;
-                    TempData["ReturnUrl"] = returnUrl;
-
-                    // Redirect to verification page
-                    return RedirectToPage("VerifyCode");
+                    return LocalRedirect(returnUrl);
                 }
 
                 foreach (var error in result.Errors)
