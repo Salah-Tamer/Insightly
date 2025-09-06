@@ -65,7 +65,8 @@ namespace Insightly.Areas.Identity.Pages.Account
             return Page();
         }
 
-        public async Task<IActionResult> OnPostAsync()
+        // Default POST handler - matches asp-page-handler="VerifyCode" in the form
+        public async Task<IActionResult> OnPostVerifyCodeAsync()
         {
             if (!ModelState.IsValid)
             {
@@ -125,6 +126,7 @@ namespace Insightly.Areas.Identity.Pages.Account
             return Page();
         }
 
+        // Resend code handler - matches asp-page-handler="ResendCode" in the form
         public async Task<IActionResult> OnPostResendCodeAsync()
         {
             var userId = TempData["UserId"]?.ToString();
@@ -167,11 +169,13 @@ namespace Insightly.Areas.Identity.Pages.Account
                 await _emailSender.SendEmailAsync(userEmail, emailSubject, emailBody);
 
                 TempData["InfoMessage"] = "A new verification code has been sent to your email.";
+
+                _logger.LogInformation($"New verification code sent to {userEmail}");
             }
 
             UserEmail = userEmail;
 
-            // Keep the data
+            // Keep the data for next attempt
             TempData.Keep("UserId");
             TempData.Keep("UserEmail");
             TempData.Keep("ReturnUrl");
