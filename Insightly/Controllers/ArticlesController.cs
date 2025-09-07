@@ -34,7 +34,6 @@ namespace Insightly.Controllers
                 Content = content,
             };
 
-
             if (ModelState.IsValid)
             {
                 var currentUser = await _userManager.GetUserAsync(User);
@@ -106,6 +105,11 @@ namespace Insightly.Controllers
         public async Task<IActionResult> Edit(int id, [Bind("ArticleId,Title,Content")] Article article)
         {
             if (id != article.ArticleId) return NotFound();
+
+            // Clear ModelState errors for fields we're not binding
+            ModelState.Remove("AuthorId");
+            ModelState.Remove("CreatedAt");
+            ModelState.Remove("Author");
 
             if (ModelState.IsValid)
             {
