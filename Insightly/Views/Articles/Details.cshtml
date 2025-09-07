@@ -29,7 +29,6 @@
                 }
                 else if (Model.AuthorId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value)
                 {
-                    @* لو المستخدم هو صاحب المقال *@
                     <a asp-action="Edit" asp-route-id="@Model.ArticleId" class="btn btn-warning me-2">✏️ Edit</a>
                     <a asp-action="Delete" asp-route-id="@Model.ArticleId" class="btn btn-danger">🗑️ Delete</a>
                 }
