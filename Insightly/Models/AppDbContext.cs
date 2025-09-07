@@ -54,7 +54,7 @@ namespace Insightly.Models
                 entity.HasOne(c => c.Article)
                     .WithMany(a => a.Comments)
                     .HasForeignKey(c => c.ArticleId)
-                    .OnDelete(DeleteBehavior.Restrict);
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             // ArticleRead
