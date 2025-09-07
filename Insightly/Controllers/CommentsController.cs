@@ -39,7 +39,7 @@ namespace Insightly.Controllers
                 AuthorId = user.Id,
                 ArticleId = articleId,
                 CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
+                UpdatedAt = null
             };
 
             _context.Comments.Add(comment);
@@ -51,7 +51,10 @@ namespace Insightly.Controllers
                 id = comment.CommentId,
                 content = comment.Content,
                 author = user.Name,
-                createdAt = comment.CreatedAt.ToString("dd MMM yyyy HH:mm")
+                authorId = user.Id,
+                createdAt = comment.CreatedAt.ToString("dd MMM yyyy HH:mm"),
+                updatedAt = (string?)null,
+                isUpdated = false
             });
         }
 
@@ -68,11 +71,71 @@ namespace Insightly.Controllers
                     id = c.CommentId,
                     content = c.Content,
                     author = c.Author.Name,
-                    createdAt = c.CreatedAt.ToString("dd MMM yyyy HH:mm")
+                    authorId = c.AuthorId,
+                    createdAt = c.CreatedAt.ToString("dd MMM yyyy HH:mm"),
+                    updatedAt = c.UpdatedAt.HasValue ? c.UpdatedAt.Value.ToString("dd MMM yyyy HH:mm") : (string?)null,
+                    isUpdated = c.UpdatedAt.HasValue
                 })
                 .ToListAsync();
 
             return Json(comments);
+        }
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> Delete(int commentId)
+        {
+            var comment = await _context.Comments.Include(c => c.Author).FirstOrDefaultAsync(c => c.CommentId == commentId);
+            if (comment == null)
+            {
+                return NotFound(new { message = "Comment not found" });
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null || (comment.AuthorId != user.Id))
+            {
+                return Forbid();
+            }
+
+            _context.Comments.Remove(comment);
+            await _context.SaveChangesAsync();
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> Edit(int commentId, string content)
+        {
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                return BadRequest(new { message = "Comment cannot be empty" });
+            }
+
+            var comment = await _context.Comments.Include(c => c.Author).FirstOrDefaultAsync(c => c.CommentId == commentId);
+            if (comment == null)
+            {
+                return NotFound(new { message = "Comment not found" });
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null || (comment.AuthorId != user.Id))
+            {
+                return Forbid();
+            }
+
+            comment.Content = content;
+            comment.UpdatedAt = DateTime.Now;
+            await _context.SaveChangesAsync();
+
+            return Json(new
+            {
+                id = comment.CommentId,
+                content = comment.Content,
+                author = comment.Author.Name,
+                authorId = comment.AuthorId,
+                createdAt = comment.CreatedAt.ToString("dd MMM yyyy HH:mm"),
+                updatedAt = comment.UpdatedAt?.ToString("dd MMM yyyy HH:mm"),
+                isUpdated = comment.UpdatedAt.HasValue
+            });
         }
     }
 }

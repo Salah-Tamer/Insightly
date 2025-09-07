@@ -12,7 +12,6 @@ namespace Insightly.Models
         
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         
-        [Required]
         public DateTime? UpdatedAt { get; set; }
 
         [Required]
