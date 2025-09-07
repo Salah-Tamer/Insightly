@@ -68,6 +68,25 @@
         .article-item {
             transition: all 0.3s ease;
         }
+
+        .read-article-card {
+            transition: all 0.3s ease;
+            border: 1px solid #e9ecef;
+        }
+
+        .read-article-card:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15);
+            transform: translateY(-2px);
+        }
+
+        .read-status-badge {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -92,6 +111,9 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" asp-controller="Search" asp-action="Index">Browse Articles</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Articles" asp-action="ReadArticles">📖 Read Articles</a>
                     </li>
 
                     <li class="nav-item">

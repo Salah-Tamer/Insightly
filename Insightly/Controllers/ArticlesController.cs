@@ -75,6 +75,18 @@ namespace Insightly.Controllers
             ViewBag.NetScore = netScore;
             ViewBag.CommentsCount = article.Comments.Count;
 
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser != null)
+            {
+                var isRead = await _context.ArticleReads
+                    .AnyAsync(ar => ar.ArticleId == id && ar.UserId == currentUser.Id);
+                ViewBag.IsRead = isRead;
+            }
+            else
+            {
+                ViewBag.IsRead = false;
+            }
+
             return View(article);
         }
         [Authorize(Roles = "Admin,User")]
@@ -144,6 +156,66 @@ namespace Insightly.Controllers
 
             TempData["SuccessMessage"] = "Article deleted successfully!";
             return RedirectToAction("Index", "Home");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize]
+        public async Task<IActionResult> MarkAsRead(int id)
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                return Unauthorized();
+            }
+
+            var article = await _context.Articles.FindAsync(id);
+            if (article == null)
+            {
+                return NotFound();
+            }
+
+            var existingRead = await _context.ArticleReads
+                .FirstOrDefaultAsync(ar => ar.ArticleId == id && ar.UserId == currentUser.Id);
+
+            if (existingRead == null)
+            {
+                var articleRead = new ArticleRead
+                {
+                    ArticleId = id,
+                    UserId = currentUser.Id,
+                    ReadAt = DateTime.Now
+                };
+
+                _context.ArticleReads.Add(articleRead);
+                await _context.SaveChangesAsync();
+            }
+
+            return Json(new { success = true, message = "Article marked as read!" });
+        }
+
+        [Authorize]
+        public async Task<IActionResult> ReadArticles()
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                return Unauthorized();
+            }
+
+            var readArticles = await _context.ArticleReads
+                .Include(ar => ar.Article)
+                .ThenInclude(a => a.Author)
+                .Where(ar => ar.UserId == currentUser.Id)
+                .OrderByDescending(ar => ar.ReadAt)
+                .Select(ar => new
+                {
+                    Article = ar.Article,
+                    ReadAt = ar.ReadAt
+                })
+                .ToListAsync();
+
+            return View(readArticles);
         }
     }
 }

@@ -1,0 +1,74 @@
+@model IEnumerable<dynamic>
+@{
+    ViewData["Title"] = "Read Articles";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="fw-bold">📖 Read Articles</h1>
+        <a asp-action="Index" asp-controller="Home" class="btn btn-outline-secondary">
+            ← Back to Home
+        </a>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="row">
+            @foreach (var item in Model)
+            {
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 read-article-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title mb-0">
+                                    <a asp-action="Details" asp-route-id="@item.Article.ArticleId" class="text-decoration-none">
+                                        @item.Article.Title
+                                    </a>
+                                </h5>
+                                <span class="read-status-badge">📖 Read</span>
+                            </div>
+                            <p class="card-text text-muted">
+                                @{
+                                    var content = item.Article.Content;
+                                    var preview = content.Length > 150 ? content.Substring(0, 150) + "..." : content;
+                                }
+                                @preview
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    By <strong>@item.Article.Author.Name</strong>
+                                </small>
+                                <small class="text-muted">
+                                    Read on @item.ReadAt.ToString("dd MMM yyyy")
+                                </small>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    Created: @item.Article.CreatedAt.ToString("dd MMM yyyy")
+                                </small>
+                                <a asp-action="Details" asp-route-id="@item.Article.ArticleId" class="btn btn-sm btn-primary">
+                                    Read Again
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="fas fa-book-open fa-3x text-muted"></i>
+            </div>
+            <h3 class="text-muted">No Read Articles Yet</h3>
+            <p class="text-muted">Start reading articles and mark them as read to see them here!</p>
+            <a asp-action="Index" asp-controller="Home" class="btn btn-primary">
+                Browse Articles
+            </a>
+        </div>
+    }
+</div>

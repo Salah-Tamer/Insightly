@@ -52,6 +52,25 @@
         </div>
     </div>
 
+    <!-- Mark as Read -->
+    @if (User.Identity != null && User.Identity.IsAuthenticated)
+    {
+        <div class="mb-4">
+            @if (ViewBag.IsRead == true)
+            {
+                <button class="btn btn-success" id="btn-mark-read" data-article-id="@Model.ArticleId" disabled>
+                    ✅ Marked as Read
+                </button>
+            }
+            else
+            {
+                <button class="btn btn-primary" id="btn-mark-read" data-article-id="@Model.ArticleId">
+                    📖 Mark as Read
+                </button>
+            }
+        </div>
+    }
+
     <!-- Comments -->
     <div class="mb-4">
         <h4>Comments (<span id="comments-count">@ViewBag.CommentsCount</span>)</h4>
@@ -135,6 +154,37 @@
         document.getElementById("btn-downvote")?.addEventListener("click", function () {
             const articleId = this.getAttribute("data-article-id");
             vote(articleId, false);
+        });
+
+        // Mark as read functionality
+        async function markAsRead(articleId) {
+            const token = getAntiForgeryToken();
+            const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+            if (token) headers['RequestVerificationToken'] = token;
+
+            const res = await fetch(`/Articles/MarkAsRead/${articleId}`, {
+                method: 'POST',
+                headers
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                const btn = document.getElementById('btn-mark-read');
+                if (btn) {
+                    btn.innerHTML = '✅ Marked as Read';
+                    btn.classList.remove('btn-primary');
+                    btn.classList.add('btn-success');
+                    btn.disabled = true;
+                }
+                alert(data.message);
+            } else {
+                alert('Failed to mark article as read.');
+            }
+        }
+
+        document.getElementById("btn-mark-read")?.addEventListener("click", function () {
+            const articleId = this.getAttribute("data-article-id");
+            markAsRead(articleId);
         });
 
         // Delete comment via AJAX
