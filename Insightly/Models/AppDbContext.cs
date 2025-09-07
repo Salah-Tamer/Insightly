@@ -45,6 +45,7 @@ namespace Insightly.Models
                 entity.HasKey(c => c.CommentId);
                 entity.Property(c => c.Content).IsRequired();
                 entity.Property(c => c.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(c => c.UpdatedAt).IsRequired(false);
 
                 entity.HasOne(c => c.Author)
                     .WithMany(u => u.Comments)
