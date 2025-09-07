@@ -1,0 +1,21 @@
+﻿@model Insightly.Models.Article
+@{
+    ViewData["Title"] = "Delete Article";
+}
+
+<div class="container py-4">
+    <h2 class="fw-bold mb-4 text-danger">Delete Article</h2>
+
+    <div class="alert alert-warning">
+        <h4>Are you sure you want to delete this article?</h4>
+        <p><strong>@Model.Title</strong></p>
+        <p>@Model.Content</p>
+        <small class="text-muted">By @Model.Author.Name on @Model.CreatedAt.ToString("dd MMM yyyy")</small>
+    </div>
+
+    <form asp-action="Delete" method="post">
+        <input type="hidden" asp-for="ArticleId" />
+        <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        <a asp-action="Details" asp-route-id="@Model.ArticleId" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>

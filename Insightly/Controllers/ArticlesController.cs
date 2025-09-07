@@ -77,5 +77,73 @@ namespace Insightly.Controllers
 
             return View(article);
         }
+        [Authorize(Roles = "Admin,User")]
+        public async Task<IActionResult> Edit(int id)
+        {
+            var article = await _context.Articles.FindAsync(id);
+            if (article == null)
+            {
+                return NotFound();
+            }
+
+            return View(article);
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,User")]
+        public async Task<IActionResult> Edit(int id, [Bind("ArticleId,Title,Content")] Article article)
+        {
+            if (id != article.ArticleId) return NotFound();
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    var existingArticle = await _context.Articles.FindAsync(id);
+                    if (existingArticle == null) return NotFound();
+
+                    existingArticle.Title = article.Title;
+                    existingArticle.Content = article.Content;
+                    existingArticle.UpdatedAt = DateTime.Now;
+
+                    _context.Update(existingArticle);
+                    await _context.SaveChangesAsync();
+
+                    TempData["SuccessMessage"] = "Article updated successfully!";
+                    return RedirectToAction(nameof(Details), new { id = article.ArticleId });
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    return NotFound();
+                }
+            }
+            return View(article);
+        }
+        [Authorize(Roles = "Admin,User")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var article = await _context.Articles
+                .Include(a => a.Author)
+                .FirstOrDefaultAsync(a => a.ArticleId == id);
+
+            if (article == null) return NotFound();
+
+            return View(article);
+        }
+
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,User")]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            var article = await _context.Articles.FindAsync(id);
+            if (article == null) return NotFound();
+
+            _context.Articles.Remove(article);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Article deleted successfully!";
+            return RedirectToAction("Index", "Home");
+        }
     }
 }
