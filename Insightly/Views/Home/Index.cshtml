@@ -4,47 +4,57 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="container py-5">
-    <!-- Hero Section -->
-    <div class="text-center mb-5">
-        <h1 class="display-4 fw-bold">Welcome to Insightly</h1>
-        <p class="lead text-muted">Read, share, and engage with articles easily</p>
-        <a href="/Articles" class="btn btn-primary btn-lg mt-3">
-            <i class="bi bi-journal-text me-2"></i> Browse Articles
-        </a>
-    </div>
+<!-- Page Title -->
+<h2 class="mb-4">Popular Articles</h2>
 
-    <!-- Latest Articles -->
-    <div class="row g-4" id="articlesContainer">
-        @foreach (var article in Model)
-        {
-            <div class="col-md-4 article-item" 
-                 data-title="@article.Title.ToLower()" 
-                 data-content="@article.Content.ToLower()" 
-                 data-author="@article.Author.Name.ToLower()">
-                <div class="card h-100 card-hover">
-                    <div class="card-body d-flex flex-column">
-                        <h5 class="card-title">@article.Title</h5>
+<!-- Articles -->
+<div id="articlesContainer">
+    @foreach (var article in Model)
+    {
+        <div class="article-card"
+             data-title="@article.Title.ToLower()"
+             data-content="@article.Content.ToLower()"
+             data-author="@article.Author.Name.ToLower()">
 
-                        <p class="card-text text-muted ellipsis">
-                            @article.Content.Substring(0, Math.Min(100, article.Content.Length))...
-                        </p>
-                        <div class="mt-auto d-flex justify-content-between align-items-center">
-                            <span class="badge bg-secondary">
-                                @article.Author.Name
-                            </span>
-                            <a href="/Articles/Details/@article.ArticleId" class="btn btn-sm btn-outline-primary">Read more</a>
-                        </div>
-                    </div>
+            <!-- التصنيف (Tag) -->
+            <span class="tag @(article.Author)">
+                @article.Author
+            </span>
+
+            <!-- عنوان المقال -->
+            <h3>@article.Title</h3>
+
+            <!-- جزء من المحتوى -->
+            <p>
+                @article.Content.Substring(0, Math.Min(150, article.Content.Length))...
+            </p>
+
+            <!-- Meta Info -->
+            <div class="meta d-flex justify-content-between align-items-center">
+                <span>
+                    <i class="bi bi-person-circle me-1"></i> @article.Author.Name
+                </span>
+                <div>
+                    <span class="me-3"><i class="bi bi-hand-thumbs-up me-1"></i>@article.Votes</span>
+                    <span class="me-3"><i class="bi bi-chat-left-text me-1"></i>@article.Comments.Count</span>
+                    <a asp-controller="Articles" asp-action="Details" asp-route-id="@article.ArticleId"
+                       class="btn btn-sm btn-outline-primary">
+                        Read more
+                    </a>
                 </div>
             </div>
-        }
-    </div>
+        </div>
+    }
+</div>
 
-    <!-- No Results Message -->
-    <div id="noResultsMessage" class="text-center py-5" style="display: none;">
-        <i class="bi bi-search display-1 text-muted mb-3"></i>
-        <h4>No articles found</h4>
-        <p class="text-muted">Try adjusting your search terms</p>
-    </div>
+<!-- Load More -->
+<div class="text-center mt-4">
+    <button class="load-btn">Load More Articles</button>
+</div>
+
+<!-- No Results Message -->
+<div id="noResultsMessage" class="text-center py-5" style="display: none;">
+    <i class="bi bi-search display-1 text-muted mb-3"></i>
+    <h4>No articles found</h4>
+    <p class="text-muted">Try adjusting your search terms</p>
 </div>
