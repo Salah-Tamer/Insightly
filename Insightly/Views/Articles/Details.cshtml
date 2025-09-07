@@ -42,7 +42,15 @@
                 <li class="list-group-item" data-comment-id="@comment.CommentId" data-author-id="@comment.AuthorId">
                     <p class="comment-content">@comment.Content</p>
                     <small class="text-muted d-block">
-                        By <strong>@comment.Author.Name</strong> on @comment.CreatedAt.ToString("dd MMM yyyy HH:mm") and updated at @comment.UpdatedAt.ToString()
+                        By <strong>@comment.Author.Name</strong> 
+                        @if (comment.UpdatedAt.HasValue)
+                        {
+                            <text>updated on @comment.UpdatedAt.Value.ToString("dd MMM yyyy HH:mm")</text>
+                        }
+                        else
+                        {
+                            <text>on @comment.CreatedAt.ToString("dd MMM yyyy HH:mm")</text>
+                        }
                     </small>
 
                     @if (!string.IsNullOrEmpty(currentUserId) && comment.AuthorId == currentUserId)
@@ -200,7 +208,19 @@
 
                 if (res.ok) {
                     const json = await res.json();
+                    
+                    // Update comment content
                     contentP.textContent = json.content ?? newContent;
+                    
+                    // Update timestamp display
+                    const timestampSmall = li.querySelector('small.text-muted');
+                    if (timestampSmall) {
+                        const timestampText = json.isUpdated 
+                            ? `updated on ${json.updatedAt}`
+                            : `on ${json.createdAt}`;
+                        timestampSmall.innerHTML = `By <strong>${json.author}</strong> ${timestampText}`;
+                    }
+                    
                     textarea.remove();
                     editControls.remove();
                     contentP.style.display = '';
@@ -301,6 +321,58 @@
             document.getElementById('comments-count').innerText = data.length;
         }
 
+        // Function to add a new comment to the list dynamically
+        function addCommentToList(commentData) {
+            const list = document.getElementById('comments-list');
+            if (!list) return;
+
+            const li = document.createElement('li');
+            li.className = 'list-group-item';
+            li.setAttribute('data-comment-id', commentData.id);
+            li.setAttribute('data-author-id', currentUserId);
+
+            // Create comment content
+            const contentP = document.createElement('p');
+            contentP.className = 'comment-content';
+            contentP.textContent = commentData.content;
+
+            // Create timestamp info
+            const timestampSmall = document.createElement('small');
+            timestampSmall.className = 'text-muted d-block';
+            
+            const timestampText = commentData.isUpdated 
+                ? `updated on ${commentData.updatedAt}`
+                : `on ${commentData.createdAt}`;
+            
+            timestampSmall.innerHTML = `By <strong>${commentData.author}</strong> ${timestampText}`;
+
+            li.appendChild(contentP);
+            li.appendChild(timestampSmall);
+
+            // Add edit/delete controls if user owns the comment
+            if (currentUserId && currentUserId === commentData.authorId) {
+                const controls = document.createElement('div');
+                controls.className = 'mt-2 comment-controls';
+
+                const editBtn = document.createElement('button');
+                editBtn.type = 'button';
+                editBtn.className = 'btn btn-sm btn-outline-secondary btn-edit me-2';
+                editBtn.textContent = 'Edit';
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.type = 'button';
+                deleteBtn.className = 'btn btn-sm btn-outline-danger btn-delete';
+                deleteBtn.textContent = 'Delete';
+
+                controls.appendChild(editBtn);
+                controls.appendChild(deleteBtn);
+                li.appendChild(controls);
+            }
+
+            // Add to the top of the list (newest first)
+            list.insertBefore(li, list.firstChild);
+        }
+
         // Add comment with AJAX
         document.getElementById("comment-form")?.addEventListener("submit", async function (e) {
             e.preventDefault();
@@ -321,10 +393,18 @@
             });
 
             if (res.ok) {
+                const data = await res.json();
                 contentEl.value = "";
-                // Option A: keep server-rendered list (no reload)
-                // Option B: reload comments if your List endpoint returns authorId
-                // loadComments(articleId); // uncomment only if List returns authorId reliably
+                
+                // Add the new comment to the page dynamically
+                addCommentToList(data);
+                
+                // Update comment count
+                const countEl = document.getElementById('comments-count');
+                if (countEl) {
+                    const currentCount = parseInt(countEl.innerText) || 0;
+                    countEl.innerText = currentCount + 1;
+                }
             } else {
                 const json = await res.json().catch(()=>null);
                 alert((json && json.message) ? json.message : "Failed to add comment.");

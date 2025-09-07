@@ -39,7 +39,7 @@ namespace Insightly.Controllers
                 AuthorId = user.Id,
                 ArticleId = articleId,
                 CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
+                UpdatedAt = null
             };
 
             _context.Comments.Add(comment);
@@ -51,7 +51,10 @@ namespace Insightly.Controllers
                 id = comment.CommentId,
                 content = comment.Content,
                 author = user.Name,
-                createdAt = comment.CreatedAt.ToString("dd MMM yyyy HH:mm")
+                authorId = user.Id,
+                createdAt = comment.CreatedAt.ToString("dd MMM yyyy HH:mm"),
+                updatedAt = (string?)null,
+                isUpdated = false
             });
         }
 
@@ -68,7 +71,10 @@ namespace Insightly.Controllers
                     id = c.CommentId,
                     content = c.Content,
                     author = c.Author.Name,
-                    createdAt = c.CreatedAt.ToString("dd MMM yyyy HH:mm")
+                    authorId = c.AuthorId,
+                    createdAt = c.CreatedAt.ToString("dd MMM yyyy HH:mm"),
+                    updatedAt = c.UpdatedAt.HasValue ? c.UpdatedAt.Value.ToString("dd MMM yyyy HH:mm") : (string?)null,
+                    isUpdated = c.UpdatedAt.HasValue
                 })
                 .ToListAsync();
 
@@ -125,7 +131,10 @@ namespace Insightly.Controllers
                 id = comment.CommentId,
                 content = comment.Content,
                 author = comment.Author.Name,
-                updatedAt = comment.UpdatedAt?.ToString("dd MMM yyyy HH:mm")
+                authorId = comment.AuthorId,
+                createdAt = comment.CreatedAt.ToString("dd MMM yyyy HH:mm"),
+                updatedAt = comment.UpdatedAt?.ToString("dd MMM yyyy HH:mm"),
+                isUpdated = comment.UpdatedAt.HasValue
             });
         }
     }
