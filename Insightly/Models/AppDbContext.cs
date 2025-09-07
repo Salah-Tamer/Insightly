@@ -91,7 +91,7 @@ namespace Insightly.Models
                 entity.HasOne(v => v.Article)
                     .WithMany(a => a.Votes)
                     .HasForeignKey(v => v.ArticleId)
-                    .OnDelete(DeleteBehavior.Restrict);
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }
