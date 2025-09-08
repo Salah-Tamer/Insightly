@@ -1,20 +1,22 @@
-@model IEnumerable<dynamic>
+@model List<Article>
 @{
-    ViewData["Title"] = "Read Articles";
+    ViewData["Title"] = "My Articles";
 }
 
 <div class="home-page container py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="fw-bold"> Read Articles</h1>
-        <a asp-action="Index" asp-controller="Home" class="btn btn-outline-secondary">← Back to Home</a>
+        <h1 class="fw-bold">My Articles</h1>
+        <div>
+            <a asp-controller="Articles" asp-action="Create" class="btn btn-primary me-2">Create Article</a>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">← Home</a>
+        </div>
     </div>
 
     @if (Model != null && Model.Any())
     {
-        <div class="d-flex flex-column gap-3" id="readArticlesContainer">
-            @foreach (var item in Model)
+        <div class="d-flex flex-column gap-3" id="articlesContainer">
+            @foreach (var article in Model)
             {
-                var article = item.Article;
                 <div class="post-card d-flex article-item"
                      data-title="@article.Title.ToLower()"
                      data-content="@article.Content.ToLower()"
@@ -30,21 +32,18 @@
                     </div>
                     <div class="flex-grow-1 p-3">
                         <div class="d-flex align-items-center gap-2 mb-1 text-muted small">
-                            <span>Read by @article.Author.Name</span>
+                            <span>Posted by @article.Author.Name</span>
                             <span>•</span>
-                            <span>@item.ReadAt.ToString("dd MMM yyyy")</span>
-                            <span class="chip ms-2">Read</span>
+                            <span>@article.CreatedAt.ToString("dd MMM yyyy")</span>
                         </div>
                         <h5 class="mb-2"><a class="text-decoration-none" href="/Articles/Details/@article.ArticleId">@article.Title</a></h5>
                         <p class="mb-3 text-muted">
-                            @{
-                                var content = article.Content ?? string.Empty;
-                                var preview = content.Length > 180 ? content.Substring(0, 180) + "..." : content;
-                            }
-                            @preview
+                            @article.Content.Substring(0, Math.Min(180, article.Content.Length))...
                         </p>
                         <div class="d-flex align-items-center gap-2">
                             <a href="/Articles/Details/@article.ArticleId" class="btn btn-sm btn-outline-primary">Open</a>
+                            <a asp-controller="Articles" asp-action="Edit" asp-route-id="@article.ArticleId" class="btn btn-sm btn-outline-secondary">Edit</a>
+                            <a asp-controller="Articles" asp-action="Delete" asp-route-id="@article.ArticleId" class="btn btn-sm btn-outline-danger">Delete</a>
                         </div>
                     </div>
                 </div>
@@ -53,11 +52,11 @@
     }
     else
     {
-        <div class="text-center py-5" id="noResultsMessage">
-            <i class="bi bi-search display-1 text-muted mb-3"></i>
-            <h4>No read articles</h4>
-            <p class="text-muted">Start reading and marking articles as read</p>
-            <a asp-action="Index" asp-controller="Home" class="btn btn-primary">Browse Articles</a>
+        <div id="noResultsMessage" class="text-center py-5">
+            <i class="bi bi-journal-x display-1 text-muted mb-3"></i>
+            <h4>You haven't created any articles yet</h4>
+            <p class="text-muted">Start by creating your first article.</p>
+            <a asp-controller="Articles" asp-action="Create" class="btn btn-primary">Create Article</a>
         </div>
     }
 </div>
@@ -117,3 +116,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 }
+

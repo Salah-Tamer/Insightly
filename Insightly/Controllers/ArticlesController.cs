@@ -195,6 +195,14 @@ namespace Insightly.Controllers
                 await _context.SaveChangesAsync();
             }
 
+            var isAjax = string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+
+            if (!isAjax)
+            {
+                TempData["SuccessMessage"] = "Article marked as read!";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
             return Json(new { success = true, message = "Article marked as read!" });
         }
 
@@ -220,6 +228,24 @@ namespace Insightly.Controllers
                 .ToListAsync();
 
             return View(readArticles);
+        }
+
+        [Authorize]
+        public async Task<IActionResult> MyArticles()
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                return Unauthorized();
+            }
+
+            var myArticles = await _context.Articles
+                .Include(a => a.Author)
+                .Where(a => a.AuthorId == currentUser.Id)
+                .OrderByDescending(a => a.CreatedAt)
+                .ToListAsync();
+
+            return View(myArticles);
         }
     }
 }

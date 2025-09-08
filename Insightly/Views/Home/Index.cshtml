@@ -4,37 +4,45 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="container py-5">
+<div class="home-page container py-5">
     <!-- Hero Section -->
     <div class="text-center mb-5">
-        <h1 class="display-4 fw-bold">Welcome to Insightly</h1>
+        <h1 class="display-4 fw-bold">Welcome to <span class="brand-accent">Insightly</span></h1>
         <p class="lead text-muted">Read, share, and engage with articles easily</p>
-        <a asp-controller="Search" asp-action="Index" class="btn btn-primary btn-lg mt-3">
-            <i class="bi bi-journal-text me-2"></i> Browse Articles
+        <a asp-controller="Articles" asp-action="MyArticles" class="btn btn-primary btn-lg mt-3">
+            <i class="bi bi-person-lines-fill me-2"></i> My Articles
         </a>
     </div>
 
-    <!-- Latest Articles -->
-    <div class="row g-4" id="articlesContainer">
+    <!-- Latest Articles (Reddit-like list) -->
+    <div class="d-flex flex-column gap-3" id="articlesContainer">
         @foreach (var article in Model)
         {
-            <div class="col-md-4 article-item" 
-                 data-title="@article.Title.ToLower()" 
-                 data-content="@article.Content.ToLower()" 
+            <div class="post-card d-flex article-item"
+                 data-title="@article.Title.ToLower()"
+                 data-content="@article.Content.ToLower()"
                  data-author="@article.Author.Name.ToLower()">
-                <div class="card h-100 card-hover">
-                    <div class="card-body d-flex flex-column">
-                        <h5 class="card-title">@article.Title</h5>
-
-                        <p class="card-text text-muted ellipsis">
-                            @article.Content.Substring(0, Math.Min(100, article.Content.Length))...
-                        </p>
-                        <div class="mt-auto d-flex justify-content-between align-items-center">
-                            <span class="badge bg-secondary">
-                                @article.Author.Name
-                            </span>
-                            <a href="/Articles/Details/@article.ArticleId" class="btn btn-sm btn-outline-primary">Read more</a>
-                        </div>
+                <div class="vote-col d-flex flex-column align-items-center justify-content-start py-2">
+                    <button class="btn btn-link p-0 vote-btn upvote" data-article-id="@article.ArticleId" aria-label="Upvote">
+                        <i class="bi bi-arrow-up-circle fs-4"></i>
+                    </button>
+                    <div class="score my-1" id="score-@article.ArticleId">0</div>
+                    <button class="btn btn-link p-0 vote-btn downvote" data-article-id="@article.ArticleId" aria-label="Downvote">
+                        <i class="bi bi-arrow-down-circle fs-4"></i>
+                    </button>
+                </div>
+                <div class="flex-grow-1 p-3">
+                    <div class="d-flex align-items-center gap-2 mb-1 text-muted small">
+                        <span>Posted by @article.Author.Name</span>
+                        <span>•</span>
+                        <span>@article.CreatedAt.ToString("dd MMM yyyy")</span>
+                    </div>
+                    <h5 class="mb-2"><a class="text-decoration-none" href="/Articles/Details/@article.ArticleId">@article.Title</a></h5>
+                    <p class="mb-3 text-muted">
+                        @article.Content.Substring(0, Math.Min(180, article.Content.Length))...
+                    </p>
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="/Articles/Details/@article.ArticleId" class="btn btn-sm btn-outline-primary">Open</a>
                     </div>
                 </div>
             </div>
@@ -48,3 +56,62 @@
         <p class="text-muted">Try adjusting your search terms</p>
     </div>
 </div>
+
+@section Scripts {
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('[id^="score-\u200b"]').forEach(() => {}); // placeholder to ensure section renders even if no items
+  // Fetch initial scores
+  document.querySelectorAll('[id^="score-\u200b"]').forEach(() => {});
+  document.querySelectorAll('[id^="score-"]').forEach(async el => {
+    const id = el.id.replace('score-', '');
+    try {
+      const res = await fetch(`/Votes/Count?articleId=${id}`);
+      if (res.ok) {
+        const json = await res.json();
+        el.textContent = (json && typeof json.netScore !== 'undefined') ? json.netScore : 0;
+      }
+    } catch (e) {}
+  });
+
+  async function sendVote(articleId, isUpvote) {
+    try {
+      const res = await fetch('/Votes/Vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ articleId: parseInt(articleId), isUpvote: Boolean(isUpvote) })
+      });
+      if (res.ok) {
+        const c = await fetch(`/Votes/Count?articleId=${articleId}`);
+        if (c.ok) {
+          const json = await c.json();
+          const s = document.getElementById(`score-${articleId}`);
+          if (s) s.textContent = (json && typeof json.netScore !== 'undefined') ? json.netScore : 0;
+        }
+      } else if (res.status === 401) {
+        window.location.href = '/Identity/Account/Login';
+      }
+    } catch (e) {}
+  }
+
+  document.querySelectorAll('.upvote').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-article-id');
+      btn.classList.add('active-up');
+      const down = btn.closest('.post-card')?.querySelector('.downvote');
+      if (down) down.classList.remove('active-down');
+      sendVote(id, true);
+    });
+  });
+  document.querySelectorAll('.downvote').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-article-id');
+      btn.classList.add('active-down');
+      const up = btn.closest('.post-card')?.querySelector('.upvote');
+      if (up) up.classList.remove('active-up');
+      sendVote(id, false);
+    });
+  });
+});
+</script>
+}
