@@ -20,11 +20,13 @@ namespace Insightly.Controllers
 
    
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Vote(int articleId, bool isUpvote)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
 
+            bool removed = false;
             var existingVote = await _context.Votes
                 .FirstOrDefaultAsync(v => v.ArticleId == articleId && v.UserId == user.Id);
 
@@ -33,8 +35,7 @@ namespace Insightly.Controllers
                 if (existingVote.IsUpvote == isUpvote)
                 {
                     _context.Votes.Remove(existingVote);
-                    await _context.SaveChangesAsync();
-                    return Ok(new { message = "Vote removed!", removed = true });
+                    removed = true;
                 }
                 else
                 {
@@ -54,7 +55,16 @@ namespace Insightly.Controllers
             }
 
             await _context.SaveChangesAsync();
-            return Ok(new { message = "Vote saved!", removed = false });
+
+            var isAjax = string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+
+            if (!isAjax)
+            {
+                TempData["SuccessMessage"] = removed ? "Vote removed!" : "Vote saved!";
+                return RedirectToAction("Details", "Articles", new { id = articleId });
+            }
+
+            return Ok(new { message = removed ? "Vote removed!" : "Vote saved!", removed });
         }
 
         [HttpGet]

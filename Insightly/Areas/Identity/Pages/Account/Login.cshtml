@@ -5,14 +5,14 @@
     ViewData["Title"] = "Log in";
 }
 
-<div class="container py-5">
+<div class="container py-5 auth-page">
     <div class="row justify-content-center">
         <div class="col-md-8 col-lg-6">
-            <div class="card">
+            <div class="card auth-card">
                 <div class="card-body p-5">
                     <h2 class="card-title text-center mb-4">Log in to your account</h2>
                     
-                    <form id="account" method="post">
+                    <form id="account" method="post" class="auth-form">
                         <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3" role="alert"></div>
                         
                         <div class="form-floating mb-3">
@@ -35,7 +35,7 @@
                         </div>
                         
                         <div class="mb-4">
-                            <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary">
+                            <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary auth-btn">
                                 <i class="bi bi-box-arrow-in-right me-1"></i>Log in
                             </button>
                         </div>
@@ -62,37 +62,3 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
-
-<style>
-    body {
-        background: #f8f9fb;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    .card {
-        border: none;
-        border-radius: 12px;
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
-    }
-    .form-control {
-        border-radius: 8px;
-        padding: 0.75rem 1rem;
-    }
-    .form-control:focus {
-        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
-    }
-    .btn {
-        border-radius: 8px;
-        padding: 0.75rem 1.5rem;
-        font-weight: 500;
-    }
-    .form-floating {
-        margin-bottom: 1.2rem;
-    }
-    .form-check-input {
-        border-radius: 4px;
-    }
-    .form-check-input:checked {
-        background-color: #0d6efd;
-        border-color: #0d6efd;
-    }
-</style>
