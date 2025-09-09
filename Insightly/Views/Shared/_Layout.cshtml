@@ -88,60 +88,78 @@
             font-weight: 500;
         }
     </style>
+
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
 
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top">
+    <nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top py-0" style="--bs-border-color:#e9ecef;">
         <div class="container-fluid">
-            <a class="navbar-brand fw-bold p-0 m-0" asp-controller="Home" asp-action="Index" style="line-height:0;">
-                <img src="~/images/logo.png" alt="Insightly Logo" class="me-2 logo" />
-            </a>
+            <div class="d-flex align-items-center">
+                <button class="btn btn-link text-decoration-none me-2 d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas" aria-controls="sidebarOffcanvas" aria-label="Open menu">
+                    <i class="bi bi-list fs-3"></i>
+                </button>
+                <a class="navbar-brand fw-bold p-0 m-0 d-flex align-items-center" asp-controller="Home" asp-action="Index" style="line-height:0;">
+                <img src="~/images/logo.png" alt="Insightly" class="logo" />
+                </a>
+            </div>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="nav">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0" style="margin-top: -8px;">
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
-                    </li>
+                
 
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Articles" asp-action="Create">Create Article</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Search" asp-action="Index">Browse Articles</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" asp-controller="Articles" asp-action="ReadArticles">📖 Read Articles</a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link d-none" id="nav-my" data-route href="#my-articles">My Articles</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link d-none" id="nav-admin" data-route href="#admin">Admin Reports</a>
-                    </li>
-                </ul>
-
-                <!-- Search Form -->
-                <div class="d-flex me-3">
-                    <div class="input-group">
-                        <input class="form-control" type="search" id="searchInput" placeholder="Search articles..." aria-label="Search" style="min-width: 200px;">
-                        <button class="btn btn-outline-primary" type="button" id="searchButton">
-                            <i class="bi bi-search"></i>
-                        </button>
+                <!-- Search Form (center like Reddit) -->
+                <form class="d-flex flex-grow-1 me-lg-3 my-2 my-lg-0" role="search" onsubmit="return false;">
+                    <div class="input-group w-100">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input class="form-control border-start-0" type="search" id="searchInput" placeholder="Search Insightly" aria-label="Search">
+                        <button class="btn btn-outline-primary d-none d-sm-inline" type="button" id="searchButton">Search</button>
                     </div>
-                </div>
+                </form>
 
-                @await Html.PartialAsync("_LoginPartial")
+                <div class="d-flex align-items-center gap-2 ms-lg-2 my-2 my-lg-0">
+                    @await Html.PartialAsync("_LoginPartial")
+                </div>
             </div>
         </div>
     </nav>
 
-    <!-- Main Container -->
-    <main class="container py-4">
-        @RenderBody()
+    <!-- Sidebar (mobile offcanvas) -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarOffcanvas" aria-labelledby="sidebarOffcanvasLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="sidebarOffcanvasLabel">Menu</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body p-0">
+            <nav class="list-group list-group-flush">
+                <a class="list-group-item list-group-item-action" asp-controller="Home" asp-action="Index"><i class="bi bi-house me-2"></i>Home</a>
+                <a class="list-group-item list-group-item-action" asp-controller="Articles" asp-action="MyArticles"><i class="bi bi-person-lines-fill me-2"></i>My Articles</a>
+                
+                <a class="list-group-item list-group-item-action" asp-controller="Articles" asp-action="ReadArticles"><i class="bi bi-book me-2"></i>Read Articles</a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Main Container with Desktop Sidebar -->
+    <main class="container-fluid">
+        <div class="row">
+            <aside class="col-lg-3 col-xl-2 d-none d-lg-block border-end sidebar px-0">
+                <div class="p-3">
+                    <div class="text-uppercase text-muted small fw-semibold mb-2">Menu</div>
+                    <nav class="nav flex-column sidebar-nav">
+                        <a class="nav-link" asp-controller="Home" asp-action="Index"><i class="bi bi-house me-2"></i>Home</a>
+                        <a class="nav-link" asp-controller="Articles" asp-action="MyArticles"><i class="bi bi-person-lines-fill me-2"></i>My Articles</a>
+                        
+                        <a class="nav-link" asp-controller="Articles" asp-action="ReadArticles"><i class="bi bi-book me-2"></i>Read Articles</a>
+                    </nav>
+                </div>
+            </aside>
+            <div class="col-lg-9 col-xl-10 py-4">
+                @RenderBody()
+            </div>
+        </div>
     </main>
 
     <!-- Toasts -->
@@ -239,8 +257,44 @@
                 }
             });
         });
+
+        // Clickable article cards functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.clickable-card').forEach(card => {
+                card.addEventListener('click', function(e) {
+                    // Don't navigate if clicking on vote buttons or read more button
+                    if (e.target.closest('.vote-btn') || e.target.closest('.read-more-btn')) {
+                        return;
+                    }
+                    
+                    const articleUrl = this.getAttribute('data-article-url');
+                    if (articleUrl) {
+                        window.location.href = articleUrl;
+                    }
+                });
+            });
+        });
     </script>
 
     @RenderSection("Scripts", required: false)
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                try {
+                    var c = document.getElementById('toasts');
+                    if (!c) return;
+                    var el = document.createElement('div');
+                    el.className = 'toast align-items-center text-bg-success border-0';
+                    el.role = 'status'; el.ariaLive = 'polite'; el.ariaAtomic = 'true';
+                    el.innerHTML = '<div class="d-flex"><div class="toast-body'>@TempData["SuccessMessage"]</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>';
+                    c.appendChild(el);
+                    var t = new bootstrap.Toast(el, { delay: 2000 });
+                    t.show();
+                } catch (e) { }
+            });
+        </script>
+    }
 </body>
 </html>

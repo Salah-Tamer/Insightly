@@ -19,6 +19,7 @@ namespace Insightly.Controllers
 
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         [Authorize]
         public async Task<IActionResult> Add(int articleId, string content)
         {
@@ -45,6 +46,13 @@ namespace Insightly.Controllers
             _context.Comments.Add(comment);
             await _context.SaveChangesAsync();
 
+            var isAjax = string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+
+            if (!isAjax)
+            {
+                TempData["SuccessMessage"] = "Comment added!";
+                return RedirectToAction("Details", "Articles", new { id = articleId });
+            }
 
             return Json(new
             {
@@ -81,6 +89,7 @@ namespace Insightly.Controllers
             return Json(comments);
         }
         [HttpPost]
+        [ValidateAntiForgeryToken]
         [Authorize]
         public async Task<IActionResult> Delete(int commentId)
         {
@@ -96,12 +105,23 @@ namespace Insightly.Controllers
                 return Forbid();
             }
 
+            int articleId = comment.ArticleId;
             _context.Comments.Remove(comment);
             await _context.SaveChangesAsync();
+
+            var isAjax = string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+
+            if (!isAjax)
+            {
+                TempData["SuccessMessage"] = "Comment deleted.";
+                return RedirectToAction("Details", "Articles", new { id = articleId });
+            }
+
             return Json(new { success = true });
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         [Authorize]
         public async Task<IActionResult> Edit(int commentId, string content)
         {
@@ -125,6 +145,14 @@ namespace Insightly.Controllers
             comment.Content = content;
             comment.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();
+
+            var isAjax = string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+
+            if (!isAjax)
+            {
+                TempData["SuccessMessage"] = "Comment updated.";
+                return RedirectToAction("Details", "Articles", new { id = comment.ArticleId });
+            }
 
             return Json(new
             {
