@@ -257,6 +257,23 @@
                 }
             });
         });
+
+        // Clickable article cards functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.clickable-card').forEach(card => {
+                card.addEventListener('click', function(e) {
+                    // Don't navigate if clicking on vote buttons or read more button
+                    if (e.target.closest('.vote-btn') || e.target.closest('.read-more-btn')) {
+                        return;
+                    }
+                    
+                    const articleUrl = this.getAttribute('data-article-url');
+                    if (articleUrl) {
+                        window.location.href = articleUrl;
+                    }
+                });
+            });
+        });
     </script>
 
     @RenderSection("Scripts", required: false)

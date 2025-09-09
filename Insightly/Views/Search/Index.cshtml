@@ -23,7 +23,7 @@
                      data-title="@article.Title.ToLower()" 
                      data-content="@article.Content.ToLower()" 
                      data-author="@article.Author.Name.ToLower()">
-                    <div class="card h-100 card-hover">
+                    <div class="card h-100 card-hover clickable-card" data-article-url="@Url.Action("Details", "Articles", new { id = article.ArticleId })">
                         <div class="card-body d-flex flex-column">
                             <h5 class="card-title">@article.Title</h5>
                             <p class="card-text text-muted ellipsis">
@@ -34,7 +34,7 @@
                                     @article.Author.Name
                                 </span>
                                 <a href="@Url.Action("Details", "Articles", new { id = article.ArticleId })" 
-                                   class="btn btn-sm btn-outline-primary">Read more</a>
+                                   class="btn btn-sm btn-outline-primary read-more-btn">Read more</a>
                             </div>
                         </div>
                     </div>

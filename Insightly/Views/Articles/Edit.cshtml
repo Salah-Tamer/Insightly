@@ -3,27 +3,81 @@
     ViewData["Title"] = "Edit Article";
 }
 
-<div class="container py-4">
-    <h2 class="fw-bold mb-4">Edit Article</h2>
-
-    <form asp-action="Edit" method="post">
-        <input type="hidden" asp-for="ArticleId" />
-
-        <div class="mb-3">
-            <label asp-for="Title" class="form-label">Title</label>
-            <input asp-for="Title" class="form-control" />
-            <span asp-validation-for="Title" class="text-danger"></span>
+<div class="home-page container py-3">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2 class="fw-bold mb-1">Edit Article</h2>
+            <p class="text-muted small mb-0">Update your article content</p>
         </div>
-
-        <div class="mb-3">
-            <label asp-for="Content" class="form-label">Content</label>
-            <textarea asp-for="Content" class="form-control" rows="6"></textarea>
-            <span asp-validation-for="Content" class="text-danger"></span>
+        <div>
+            <a asp-action="Details" asp-route-id="@Model.ArticleId" class="btn btn-outline-secondary btn-sm">← Back to Article</a>
         </div>
+    </div>
 
-        <button type="submit" class="btn btn-primary">Save Changes</button>
-        <a asp-action="Details" asp-route-id="@Model.ArticleId" class="btn btn-secondary">Cancel</a>
-    </form>
+    <!-- Edit Form Card -->
+    <div class="post-card">
+        <div class="p-3">
+            <form asp-action="Edit" method="post">
+                <input type="hidden" asp-for="ArticleId" />
+
+                <div class="mb-3">
+                    <label asp-for="Title" class="form-label fw-semibold small">Article Title</label>
+                    <input asp-for="Title" class="form-control" placeholder="What's your article about?" />
+                    <span asp-validation-for="Title" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Content" class="form-label fw-semibold small">Content</label>
+                    <textarea asp-for="Content" class="form-control" rows="8" placeholder="Write your article content here..."></textarea>
+                    <span asp-validation-for="Content" class="text-danger small"></span>
+                    <div class="form-text small">Be thoughtful and respectful in your writing.</div>
+                </div>
+
+                <hr class="my-3" />
+
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary" style="background-color: #ff4b37; border-color: #ff4b37;">
+                            <i class="bi bi-check-lg me-1"></i>Save Changes
+                        </button>
+                        <a asp-action="Details" asp-route-id="@Model.ArticleId" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                    <div class="text-muted small">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Changes will be visible to all users
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tips Card -->
+    <div class="post-card mt-3">
+        <div class="p-3">
+            <h6 class="fw-semibold mb-2">
+                <i class="bi bi-pencil-square me-1"></i>Editing Tips
+            </h6>
+            <ul class="list-unstyled mb-0 small">
+                <li class="mb-1">
+                    <i class="bi bi-check-circle text-success me-1"></i>
+                    <strong>Review carefully:</strong> Check for typos and clarity
+                </li>
+                <li class="mb-1">
+                    <i class="bi bi-check-circle text-success me-1"></i>
+                    <strong>Keep it relevant:</strong> Ensure content is still accurate
+                </li>
+                <li class="mb-1">
+                    <i class="bi bi-check-circle text-success me-1"></i>
+                    <strong>Maintain tone:</strong> Keep the same voice and style
+                </li>
+                <li class="mb-0">
+                    <i class="bi bi-check-circle text-success me-1"></i>
+                    <strong>Test readability:</strong> Make sure it flows well
+                </li>
+            </ul>
+        </div>
+    </div>
 </div>
 
 @section Scripts {

@@ -15,10 +15,11 @@
             @foreach (var item in Model)
             {
                 var article = item.Article;
-                <div class="post-card d-flex article-item"
+                <div class="post-card d-flex article-item clickable-card"
                      data-title="@article.Title.ToLower()"
                      data-content="@article.Content.ToLower()"
-                     data-author="@article.Author.Name.ToLower()">
+                     data-author="@article.Author.Name.ToLower()"
+                     data-article-url="/Articles/Details/@article.ArticleId">
                     <div class="vote-col d-flex flex-column align-items-center justify-content-start py-2">
                         <button class="btn btn-link p-0 vote-btn upvote" data-article-id="@article.ArticleId" aria-label="Upvote">
                             <i class="bi bi-arrow-up-circle fs-4"></i>
@@ -43,8 +44,8 @@
                             }
                             @preview
                         </p>
-                        <div class="d-flex align-items-center gap-2">
-                            <a href="/Articles/Details/@article.ArticleId" class="btn btn-sm btn-outline-primary">Open</a>
+                        <div class="d-flex align-items-center justify-content-end">
+                            <a href="/Articles/Details/@article.ArticleId" class="btn btn-sm btn-outline-primary read-more-btn">Read more</a>
                         </div>
                     </div>
                 </div>
