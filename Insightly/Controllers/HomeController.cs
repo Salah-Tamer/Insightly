@@ -28,6 +28,27 @@ namespace Insightly.Controllers
             return View(articles);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> LoadMoreArticles(int skip = 3, int take = 3)
+        {
+            var articles = await _context.Articles
+                                        .Include(a => a.Author)
+                                        .OrderByDescending(a => a.CreatedAt)
+                                        .Skip(skip)
+                                        .Take(take)
+                                        .Select(a => new
+                                        {
+                                            ArticleId = a.ArticleId,
+                                            Title = a.Title,
+                                            Content = a.Content,
+                                            CreatedAt = a.CreatedAt,
+                                            Author = new { Name = a.Author.Name }
+                                        })
+                                        .ToListAsync();
+
+            return Json(articles);
+        }
+
         public IActionResult Privacy()
         {
             return View();
