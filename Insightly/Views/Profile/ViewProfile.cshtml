@@ -8,9 +8,20 @@
 <div class="home-page">
 <div class="row">
     <div class="col-12">
+        <!-- Navigation Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none" style="color: #ff4b37;">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">@Model.Name's Profile</li>
+            </ol>
+        </nav>
+        
         <div class="card" style="border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-            <div class="card-header" style="border-radius: 12px 12px 0 0; background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border-bottom: 1px solid #e9ecef;">
+            <div class="card-header d-flex justify-content-between align-items-center" style="border-radius: 12px 12px 0 0; background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border-bottom: 1px solid #e9ecef;">
                 <h4 class="mb-0">@Model.Name's Profile</h4>
+                <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm" style="border-radius: 8px;">
+                    <i class="bi bi-arrow-left"></i> Back
+                </a>
             </div>
             <div class="card-body" style="padding: 1.5rem;">
                 <div class="row">
@@ -67,7 +78,7 @@
                             </div>
                             <div class="flex-grow-1 p-3">
                                 <div class="d-flex align-items-center gap-2 mb-1 text-muted small">
-                                    <span>Posted by @article.Author.Name</span>
+                                    <span>Posted by <a asp-controller="Profile" asp-action="ViewProfile" asp-route-id="@article.AuthorId" class="text-decoration-none fw-medium" style="color: #ff4b37 !important;">@article.Author.Name</a></span>
                                     <span>•</span>
                                     <span>@article.CreatedAt.ToString("dd MMM yyyy")</span>
                                 </div>

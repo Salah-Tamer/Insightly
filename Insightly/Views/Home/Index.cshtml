@@ -34,7 +34,7 @@
                 </div>
                 <div class="flex-grow-1 p-3">
                     <div class="d-flex align-items-center gap-2 mb-1 text-muted small">
-                        <span>Posted by @article.Author.Name</span>
+                        <span>Posted by <a asp-controller="Profile" asp-action="ViewProfile" asp-route-id="@article.AuthorId" class="text-decoration-none fw-medium" style="color: #ff4b37 !important;">@article.Author.Name</a></span>
                         <span>•</span>
                         <span>@article.CreatedAt.ToString("dd MMM yyyy")</span>
                     </div>
