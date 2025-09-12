@@ -133,12 +133,11 @@
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body p-0">
-            <nav class="list-group list-group-flush">
-                <a class="list-group-item list-group-item-action" asp-controller="Home" asp-action="Index"><i class="bi bi-house me-2"></i>Home</a>
-                <a class="list-group-item list-group-item-action" asp-controller="Articles" asp-action="MyArticles"><i class="bi bi-person-lines-fill me-2"></i>My Articles</a>
-                
-                <a class="list-group-item list-group-item-action" asp-controller="Articles" asp-action="ReadArticles"><i class="bi bi-book me-2"></i>Read Articles</a>
-            </nav>
+                    <nav class="list-group list-group-flush">
+                        <a class="list-group-item list-group-item-action" asp-controller="Home" asp-action="Index"><i class="bi bi-house me-2"></i>Home</a>
+                        <a class="list-group-item list-group-item-action" asp-controller="Profile" asp-action="Index"><i class="bi bi-person me-2"></i>My Profile</a>
+                        <a class="list-group-item list-group-item-action" asp-controller="Articles" asp-action="ReadArticles"><i class="bi bi-book me-2"></i>Read Articles</a>
+                    </nav>
         </div>
     </div>
 
@@ -150,8 +149,7 @@
                     <div class="text-uppercase text-muted small fw-semibold mb-2">Menu</div>
                     <nav class="nav flex-column sidebar-nav">
                         <a class="nav-link" asp-controller="Home" asp-action="Index"><i class="bi bi-house me-2"></i>Home</a>
-                        <a class="nav-link" asp-controller="Articles" asp-action="MyArticles"><i class="bi bi-person-lines-fill me-2"></i>My Articles</a>
-                        
+                        <a class="nav-link" asp-controller="Profile" asp-action="Index"><i class="bi bi-person me-2"></i>My Profile</a>
                         <a class="nav-link" asp-controller="Articles" asp-action="ReadArticles"><i class="bi bi-book me-2"></i>Read Articles</a>
                     </nav>
                 </div>

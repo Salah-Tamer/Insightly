@@ -4,6 +4,7 @@ using Insightly.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Insightly.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250912212948_AddProfilePictureField")]
+    partial class AddProfilePictureField
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -141,7 +144,7 @@ namespace Insightly.Migrations
 
                     b.HasIndex("AuthorId");
 
-                    b.ToTable("Articles", (string)null);
+                    b.ToTable("Articles");
                 });
 
             modelBuilder.Entity("Insightly.Models.ArticleRead", b =>
@@ -170,7 +173,7 @@ namespace Insightly.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ArticleReads", (string)null);
+                    b.ToTable("ArticleReads");
                 });
 
             modelBuilder.Entity("Insightly.Models.Comment", b =>
@@ -206,7 +209,7 @@ namespace Insightly.Migrations
 
                     b.HasIndex("AuthorId");
 
-                    b.ToTable("Comments", (string)null);
+                    b.ToTable("Comments");
                 });
 
             modelBuilder.Entity("Insightly.Models.Vote", b =>
@@ -235,7 +238,7 @@ namespace Insightly.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_Votes_UserId_ArticleId");
 
-                    b.ToTable("Votes", (string)null);
+                    b.ToTable("Votes");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
