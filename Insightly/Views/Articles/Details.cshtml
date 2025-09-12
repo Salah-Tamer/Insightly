@@ -15,7 +15,7 @@
                 <div>
                     <div class="post-meta small mb-1">
                         <span class="chip me-2">Article</span>
-                        Posted by <strong>@Model.Author.Name</strong> • @Model.CreatedAt.ToString("dd MMM yyyy")
+                        Posted by <a asp-controller="Profile" asp-action="ViewProfile" asp-route-id="@Model.AuthorId" class="text-decoration-none fw-bold" style="color: #ff4b37 !important;">@Model.Author.Name</a> • @Model.CreatedAt.ToString("dd MMM yyyy")
                     </div>
                     <h2 class="mb-0">@Model.Title</h2>
                 </div>
@@ -135,7 +135,7 @@
                                     <div class="flex-grow-1">
                                         <div class="d-flex justify-content-between align-items-start mb-2">
                                             <div class="d-flex align-items-center gap-2">
-                                                <strong class="text-dark small">@comment.Author.Name</strong>
+                                                <a asp-controller="Profile" asp-action="ViewProfile" asp-route-id="@comment.AuthorId" class="text-decoration-none fw-bold small" style="color: #ff4b37 !important;">@comment.Author.Name</a>
                                                 <span class="text-muted small">•</span>
                                                 @if (comment.UpdatedAt.HasValue)
                                                 {
