@@ -13,6 +13,12 @@ namespace Insightly.Models
         [StringLength(10)]
         public string Gender { get; set; } = string.Empty;
 
+        [StringLength(255)]
+        public string? ProfilePicture { get; set; }
+
+        [StringLength(500)]
+        public string? Bio { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public virtual List<Article> Articles { get; set; } = new();

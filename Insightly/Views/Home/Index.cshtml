@@ -9,8 +9,8 @@
     <div class="text-center mb-5">
         <h1 class="display-4 fw-bold">Welcome to <span class="brand-accent">Insightly</span></h1>
         <p class="lead text-muted">Read, share, and engage with articles easily</p>
-        <a asp-controller="Articles" asp-action="MyArticles" class="btn btn-primary btn-lg mt-3">
-            <i class="bi bi-person-lines-fill me-2"></i> My Articles
+        <a asp-controller="Profile" asp-action="Index" class="btn btn-primary btn-lg mt-3">
+            <i class="bi bi-person me-2"></i> My Profile
         </a>
     </div>
 
@@ -34,7 +34,7 @@
                 </div>
                 <div class="flex-grow-1 p-3">
                     <div class="d-flex align-items-center gap-2 mb-1 text-muted small">
-                        <span>Posted by @article.Author.Name</span>
+                        <span>Posted by <a asp-controller="Profile" asp-action="ViewProfile" asp-route-id="@article.AuthorId" class="text-decoration-none fw-medium" style="color: #ff4b37 !important;">@article.Author.Name</a></span>
                         <span>•</span>
                         <span>@article.CreatedAt.ToString("dd MMM yyyy")</span>
                     </div>
