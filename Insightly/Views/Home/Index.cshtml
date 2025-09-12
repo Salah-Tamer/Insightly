@@ -50,6 +50,16 @@
         }
     </div>
 
+    <!-- Load More Button -->
+    <div class="text-center mt-4" id="loadMoreContainer">
+        <button id="loadMoreBtn" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-down-circle me-2"></i>Load More Articles
+        </button>
+        <div id="loadingSpinner" class="spinner-border text-primary mt-3" role="status" style="display: none;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
     <!-- No Results Message -->
     <div id="noResultsMessage" class="text-center py-5" style="display: none;">
         <i class="bi bi-search display-1 text-muted mb-3"></i>
@@ -61,6 +71,9 @@
 @section Scripts {
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+  let currentSkip = 3; // Start from 4th article (0-indexed, so skip 3)
+  const take = 3; // Load 3 articles at a time
+  
   document.querySelectorAll('[id^="score-\u200b"]').forEach(() => {}); // placeholder to ensure section renders even if no items
   // Fetch initial scores
   document.querySelectorAll('[id^="score-\u200b"]').forEach(() => {});
@@ -113,6 +126,146 @@ document.addEventListener('DOMContentLoaded', () => {
       sendVote(id, false);
     });
   });
+
+  // Load More functionality
+  async function loadMoreArticles() {
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const articlesContainer = document.getElementById('articlesContainer');
+    
+    // Show loading state
+    loadMoreBtn.style.display = 'none';
+    loadingSpinner.style.display = 'block';
+    
+    try {
+      const response = await fetch(`/Home/LoadMoreArticles?skip=${currentSkip}&take=${take}`);
+      if (response.ok) {
+        const articles = await response.json();
+        
+        if (articles.length === 0) {
+          // No more articles, hide the load more container
+          document.getElementById('loadMoreContainer').style.display = 'none';
+          return;
+        }
+        
+        // Add new articles to the container
+        articles.forEach(article => {
+          const articleHtml = createArticleHtml(article);
+          articlesContainer.insertAdjacentHTML('beforeend', articleHtml);
+        });
+        
+        // Update skip for next request
+        currentSkip += take;
+        
+        // Re-attach event listeners to new vote buttons
+        attachVoteListeners();
+        
+        // Fetch scores for new articles
+        fetchScoresForNewArticles(articles);
+        
+        // Show button again if we got a full batch (might be more articles)
+        if (articles.length === take) {
+          loadMoreBtn.style.display = 'inline-block';
+        } else {
+          // Hide load more if we got less than requested (no more articles)
+          document.getElementById('loadMoreContainer').style.display = 'none';
+        }
+      }
+    } catch (error) {
+      console.error('Error loading more articles:', error);
+      loadMoreBtn.style.display = 'inline-block';
+    } finally {
+      loadingSpinner.style.display = 'none';
+    }
+  }
+  
+  function createArticleHtml(article) {
+    const contentPreview = article.content.length > 180 ? 
+      article.content.substring(0, 180) + '...' : 
+      article.content;
+    
+    const createdAt = new Date(article.createdAt).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+    
+    return `
+      <div class="post-card d-flex article-item clickable-card"
+           data-title="${article.title.toLowerCase()}"
+           data-content="${article.content.toLowerCase()}"
+           data-author="${article.author.name.toLowerCase()}"
+           data-article-url="/Articles/Details/${article.articleId}">
+        <div class="vote-col d-flex flex-column align-items-center justify-content-start py-2">
+          <button class="btn btn-link p-0 vote-btn upvote" data-article-id="${article.articleId}" aria-label="Upvote">
+            <i class="bi bi-arrow-up-circle fs-4"></i>
+          </button>
+          <div class="score my-1" id="score-${article.articleId}">0</div>
+          <button class="btn btn-link p-0 vote-btn downvote" data-article-id="${article.articleId}" aria-label="Downvote">
+            <i class="bi bi-arrow-down-circle fs-4"></i>
+          </button>
+        </div>
+        <div class="flex-grow-1 p-3">
+          <div class="d-flex align-items-center gap-2 mb-1 text-muted small">
+            <span>Posted by ${article.author.name}</span>
+            <span>•</span>
+            <span>${createdAt}</span>
+          </div>
+          <h5 class="mb-2"><a class="text-decoration-none" href="/Articles/Details/${article.articleId}">${article.title}</a></h5>
+          <p class="mb-3 text-muted">${contentPreview}</p>
+          <div class="d-flex align-items-center justify-content-end">
+            <a href="/Articles/Details/${article.articleId}" class="btn btn-sm btn-outline-primary read-more-btn">Read more</a>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  function attachVoteListeners() {
+    // Remove existing listeners and re-attach to all vote buttons
+    document.querySelectorAll('.upvote').forEach(btn => {
+      btn.removeEventListener('click', handleUpvote);
+      btn.addEventListener('click', handleUpvote);
+    });
+    document.querySelectorAll('.downvote').forEach(btn => {
+      btn.removeEventListener('click', handleDownvote);
+      btn.addEventListener('click', handleDownvote);
+    });
+  }
+  
+  function handleUpvote(e) {
+    const id = e.target.closest('.upvote').getAttribute('data-article-id');
+    e.target.closest('.upvote').classList.add('active-up');
+    const down = e.target.closest('.post-card')?.querySelector('.downvote');
+    if (down) down.classList.remove('active-down');
+    sendVote(id, true);
+  }
+  
+  function handleDownvote(e) {
+    const id = e.target.closest('.downvote').getAttribute('data-article-id');
+    e.target.closest('.downvote').classList.add('active-down');
+    const up = e.target.closest('.post-card')?.querySelector('.upvote');
+    if (up) up.classList.remove('active-up');
+    sendVote(id, false);
+  }
+  
+  function fetchScoresForNewArticles(articles) {
+    articles.forEach(async article => {
+      try {
+        const res = await fetch(`/Votes/Count?articleId=${article.articleId}`);
+        if (res.ok) {
+          const json = await res.json();
+          const scoreEl = document.getElementById(`score-${article.articleId}`);
+          if (scoreEl) {
+            scoreEl.textContent = (json && typeof json.netScore !== 'undefined') ? json.netScore : 0;
+          }
+        }
+      } catch (e) {}
+    });
+  }
+  
+  // Attach load more button event listener
+  document.getElementById('loadMoreBtn').addEventListener('click', loadMoreArticles);
 });
 </script>
 }
