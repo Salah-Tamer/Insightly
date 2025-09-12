@@ -1,0 +1,168 @@
+@model Insightly.Models.ApplicationUser
+
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<div class="home-page">
+<div class="row">
+    <div class="col-12">
+        <div class="card" style="border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+            <div class="card-header d-flex justify-content-between align-items-center" style="border-radius: 12px 12px 0 0; background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border-bottom: 1px solid #e9ecef;">
+                <h4 class="mb-0">My Profile</h4>
+                <a asp-action="Edit" class="btn btn-outline-primary btn-sm" style="border-radius: 8px;">
+                    <i class="bi bi-pencil"></i> Edit Profile
+                </a>
+            </div>
+            <div class="card-body" style="padding: 1.5rem;">
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        @if (!string.IsNullOrEmpty(Model.ProfilePicture))
+                        {
+                            <img src="@Model.ProfilePicture" alt="Profile Picture" class="img-fluid rounded-circle mb-3" style="width: 120px; height: 120px; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+                        }
+                        else
+                        {
+                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center mb-3 mx-auto" style="width: 120px; height: 120px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); background: linear-gradient(135deg, #6c757d 0%, #495057 100%);">
+                                <i class="bi bi-person-fill text-white" style="font-size: 3rem;"></i>
+                            </div>
+                        }
+                    </div>
+                    <div class="col-md-9">
+                        <h5 class="card-title">@Model.Name</h5>
+                        <p class="text-muted mb-2">
+                            <i class="bi bi-envelope"></i> @Model.Email
+                        </p>
+                        <p class="text-muted mb-2">
+                            <i class="bi bi-calendar"></i> Member since @Model.CreatedAt.ToString("MMMM yyyy")
+                        </p>
+                        @if (!string.IsNullOrEmpty(Model.Bio))
+                        {
+                            <div class="mt-3 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border-radius: 8px; border: 1px solid #e9ecef;">
+                                <h6 class="mb-2" style="color: #495057;">Bio</h6>
+                                <p class="text-muted mb-0" style="line-height: 1.6;">@Model.Bio</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User's Articles -->
+        <div class="mt-4">
+            <h5 class="mb-3">My Articles</h5>
+            @{
+                var userArticles = ViewBag.Articles as List<Insightly.Models.Article>;
+            }
+            @if (userArticles != null && userArticles.Any())
+            {
+                <div class="d-flex flex-column gap-3" id="articlesContainer">
+                    @foreach (var article in userArticles.Take(5))
+                    {
+                        <div class="post-card d-flex article-item clickable-card"
+                             data-title="@article.Title.ToLower()"
+                             data-content="@article.Content.ToLower()"
+                             data-author="@article.Author.Name.ToLower()"
+                             data-article-url="/Articles/Details/@article.ArticleId">
+                            <div class="vote-col d-flex flex-column align-items-center justify-content-start py-2">
+                                <button class="btn btn-link p-0 vote-btn upvote" data-article-id="@article.ArticleId" aria-label="Upvote">
+                                    <i class="bi bi-arrow-up-circle fs-4"></i>
+                                </button>
+                                <div class="score my-1" id="score-@article.ArticleId">0</div>
+                                <button class="btn btn-link p-0 vote-btn downvote" data-article-id="@article.ArticleId" aria-label="Downvote">
+                                    <i class="bi bi-arrow-down-circle fs-4"></i>
+                                </button>
+                            </div>
+                            <div class="flex-grow-1 p-3">
+                                <div class="d-flex align-items-center gap-2 mb-1 text-muted small">
+                                    <span>Posted by @article.Author.Name</span>
+                                    <span>•</span>
+                                    <span>@article.CreatedAt.ToString("dd MMM yyyy")</span>
+                                </div>
+                                <h5 class="mb-2"><a class="text-decoration-none" href="/Articles/Details/@article.ArticleId">@article.Title</a></h5>
+                                <p class="mb-3 text-muted">
+                                    @article.Content.Substring(0, Math.Min(180, article.Content.Length))...
+                                </p>
+                                <div class="d-flex align-items-center justify-content-end">
+                                    <a href="/Articles/Details/@article.ArticleId" class="btn btn-sm btn-outline-primary read-more-btn">Read more</a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+                @if (userArticles.Count > 5)
+                {
+                    <div class="text-center mt-3">
+                        <p class="text-muted small">Showing 5 of @userArticles.Count articles</p>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-journal-x display-1 text-muted mb-3"></i>
+                    <h4>You haven't created any articles yet</h4>
+                    <p class="text-muted">Start by creating your first article.</p>
+                    <a asp-controller="Articles" asp-action="Create" class="btn btn-primary">Create Article</a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+</div>
+
+@section Scripts {
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('[id^="score-"]').forEach(async el => {
+    const id = el.id.replace('score-', '');
+    try {
+      const res = await fetch(`/Votes/Count?articleId=${id}`);
+      if (res.ok) {
+        const json = await res.json();
+        el.textContent = (json && typeof json.netScore !== 'undefined') ? json.netScore : 0;
+      }
+    } catch (e) {}
+  });
+
+  async function sendVote(articleId, isUpvote) {
+    try {
+      const res = await fetch('/Votes/Vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ articleId: parseInt(articleId), isUpvote: Boolean(isUpvote) })
+      });
+      if (res.ok) {
+        const c = await fetch(`/Votes/Count?articleId=${articleId}`);
+        if (c.ok) {
+          const json = await c.json();
+          const s = document.getElementById(`score-${articleId}`);
+          if (s) s.textContent = (json && typeof json.netScore !== 'undefined') ? json.netScore : 0;
+        }
+      } else if (res.status === 401) {
+        window.location.href = '/Identity/Account/Login';
+      }
+    } catch (e) {}
+  }
+
+  document.querySelectorAll('.upvote').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-article-id');
+      btn.classList.add('active-up');
+      const down = btn.closest('.post-card')?.querySelector('.downvote');
+      if (down) down.classList.remove('active-down');
+      sendVote(id, true);
+    });
+  });
+  document.querySelectorAll('.downvote').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-article-id');
+      btn.classList.add('active-down');
+      const up = btn.closest('.post-card')?.querySelector('.upvote');
+      if (up) up.classList.remove('active-up');
+      sendVote(id, false);
+    });
+  });
+});
+</script>
+}
