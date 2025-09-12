@@ -56,3 +56,6 @@ nunit-*.xml
 
 appsettings.Development.json
 .vs/
+
+# User uploaded files
+wwwroot/uploads/
