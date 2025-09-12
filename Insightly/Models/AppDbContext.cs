@@ -23,6 +23,8 @@ namespace Insightly.Models
                 entity.Property(u => u.Email).IsRequired();
                 entity.Property(u => u.PasswordHash).IsRequired();
                 entity.Property(u => u.Gender).IsRequired().HasMaxLength(10);
+                entity.Property(u => u.ProfilePicture).HasMaxLength(255);
+                entity.Property(u => u.Bio).HasMaxLength(500);
                 entity.Property(u => u.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             });
 
