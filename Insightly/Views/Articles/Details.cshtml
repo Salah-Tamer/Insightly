@@ -1,11 +1,15 @@
 ﻿@model Article
 @using System.Security.Claims
+@inject UserManager<Insightly.Models.ApplicationUser> _userManager
 
 @{
     ViewData["Title"] = Model.Title;
     var currentUserId = User.Identity != null && User.Identity.IsAuthenticated
                         ? User.FindFirstValue(ClaimTypes.NameIdentifier)
                         : "";
+    var currentUser = User.Identity != null && User.Identity.IsAuthenticated
+                      ? await _userManager.GetUserAsync(User)
+                      : null;
 }
 
 <div class="details-page py-4">
@@ -93,9 +97,16 @@
                     <input type="hidden" name="articleId" value="@Model.ArticleId" />
                     <div class="d-flex align-items-start gap-3">
                         <div class="flex-shrink-0">
-                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                <i class="bi bi-person-fill text-white"></i>
-                            </div>
+                            @if (currentUser != null && !string.IsNullOrEmpty(currentUser.ProfilePicture))
+                            {
+                                <img src="@currentUser.ProfilePicture" alt="@currentUser.Name" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;" />
+                            }
+                            else
+                            {
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                    <i class="bi bi-person-fill text-white"></i>
+                                </div>
+                            }
                         </div>
                         <div class="flex-grow-1">
                             <textarea name="content" id="comment-content" class="form-control composer-input collapsed" rows="3" placeholder="Share your thoughts..." required></textarea>
@@ -128,9 +139,16 @@
                             <div class="p-3" style="background-color: #f8f9fa; border-radius: 0.5rem; border-left: 4px solid #ff4b37;">
                                 <div class="d-flex align-items-start gap-3">
                                     <div class="flex-shrink-0">
-                                        <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
-                                            <i class="bi bi-person-fill text-white small"></i>
-                                        </div>
+                                        @if (!string.IsNullOrEmpty(comment.Author.ProfilePicture))
+                                        {
+                                            <img src="@comment.Author.ProfilePicture" alt="@comment.Author.Name" class="rounded-circle" style="width: 36px; height: 36px; object-fit: cover;" />
+                                        }
+                                        else
+                                        {
+                                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                                <i class="bi bi-person-fill text-white small"></i>
+                                            </div>
+                                        }
                                     </div>
                                     <div class="flex-grow-1">
                                         <div class="d-flex justify-content-between align-items-start mb-2">
@@ -201,9 +219,16 @@
                                     <input type="hidden" name="commentId" value="@comment.CommentId" />
                                     <div class="d-flex align-items-start gap-3">
                                         <div class="flex-shrink-0">
-                                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                                <i class="bi bi-person-fill text-white"></i>
-                                            </div>
+                                            @if (currentUser != null && !string.IsNullOrEmpty(currentUser.ProfilePicture))
+                                            {
+                                                <img src="@currentUser.ProfilePicture" alt="@currentUser.Name" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;" />
+                                            }
+                                            else
+                                            {
+                                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                    <i class="bi bi-person-fill text-white"></i>
+                                                </div>
+                                            }
                                         </div>
                                         <div class="flex-grow-1">
                                             <textarea name="content" class="form-control composer-input collapsed" rows="3" placeholder="Share your thoughts..." required>@comment.Content</textarea>
