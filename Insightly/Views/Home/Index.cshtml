@@ -52,10 +52,10 @@
 
     <!-- Load More Button -->
     <div class="text-center mt-4" id="loadMoreContainer">
-        <button id="loadMoreBtn" class="btn btn-outline-primary">
+        <button id="loadMoreBtn" class="btn btn-outline-primary" style="border-color: var(--primary); color: var(--primary);" onmouseover="this.style.backgroundColor='var(--primary)'; this.style.color='white';" onmouseout="this.style.backgroundColor='transparent'; this.style.color='var(--primary)';">
             <i class="bi bi-arrow-down-circle me-2"></i>Load More Articles
         </button>
-        <div id="loadingSpinner" class="spinner-border text-primary mt-3" role="status" style="display: none;">
+        <div id="loadingSpinner" class="spinner-border mt-3" role="status" style="display: none; color: var(--primary);">
             <span class="visually-hidden">Loading...</span>
         </div>
     </div>
