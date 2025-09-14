@@ -169,6 +169,26 @@
                                         <div class="comment-content">
                                             <p class="mb-0" style="line-height: 1.6;">@comment.Content</p>
                                         </div>
+                                        
+                                        <!-- Comment Actions Bar -->
+                                        <div class="comment-actions d-flex align-items-center flex-wrap mt-2">
+                                            <div class="action-vote pill d-inline-flex align-items-center me-2" style="background-color: #e9ecef; border-color: #dee2e6; color: #000000 !important;">
+                                                <form asp-controller="Votes" asp-action="CommentVote" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="commentId" value="@comment.CommentId" />
+                                                    <input type="hidden" name="isUpvote" value="true" />
+                                                    <button type="submit" class="action-btn btn-icon comment-upvote" data-comment-id="@comment.CommentId" aria-label="Upvote comment" style="color: #000000 !important;"><i class="bi bi-arrow-up" style="color: #000000 !important;"></i></button>
+                                                </form>
+                                                <span class="score mx-1" id="comment-score-@comment.CommentId" style="color: #000000 !important;">0</span>
+                                                <form asp-controller="Votes" asp-action="CommentVote" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="commentId" value="@comment.CommentId" />
+                                                    <input type="hidden" name="isUpvote" value="false" />
+                                                    <button type="submit" class="action-btn btn-icon comment-downvote" data-comment-id="@comment.CommentId" aria-label="Downvote comment" style="color: #000000 !important;"><i class="bi bi-arrow-down" style="color: #000000 !important;"></i></button>
+                                                </form>
+                                            </div>
+                                            <button class="action-btn pill comment-share" data-comment-id="@comment.CommentId" type="button" aria-label="Share comment" style="background-color: #e9ecef; border-color: #dee2e6; color: #000000 !important;"><i class="bi bi-share" style="color: #000000 !important;"></i><span class="d-none d-sm-inline ms-1" style="color: #000000 !important;">Share</span></button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -230,6 +250,55 @@
             if (navigator.share) { try { await navigator.share({ title, url }); return; } catch (e) {} }
             try { await navigator.clipboard.writeText(url); showToast('Link copied to clipboard'); } catch (e) { alert(url); }
         }
+
+        async function sendCommentVote(commentId, isUpvote) {
+            try {
+                const formData = new FormData();
+                formData.append('commentId', commentId);
+                formData.append('isUpvote', isUpvote);
+                formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+
+                const res = await fetch('/Votes/CommentVote', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (res.ok) {
+                    const c = await fetch(`/Votes/CommentCount?commentId=${commentId}`);
+                    if (c.ok) {
+                        const json = await c.json();
+                        const s = document.getElementById(`comment-score-${commentId}`);
+                        if (s) s.textContent = (json && typeof json.netScore !== 'undefined') ? json.netScore : 0;
+                    }
+                } else if (res.status === 401) {
+                    window.location.href = '/Identity/Account/Login';
+                }
+            } catch (e) {}
+        }
+
+        async function shareComment(commentId) {
+            const commentElement = document.querySelector(`[data-comment-id="${commentId}"]`).closest('.comment-item');
+            const commentText = commentElement.querySelector('.comment-content p').textContent;
+            const commentUrl = `${window.location.href}#comment-${commentId}`;
+            
+            if (navigator.share) {
+                try {
+                    await navigator.share({ 
+                        title: 'Comment from Insightly',
+                        text: commentText,
+                        url: commentUrl 
+                    });
+                    return;
+                } catch (e) {}
+            }
+            
+            try {
+                await navigator.clipboard.writeText(commentUrl);
+                showToast('Comment link copied to clipboard');
+            } catch (e) {
+                alert(commentUrl);
+            }
+        }
         
         function toggleEditComment(commentId) {
             const displayDiv = document.getElementById(`comment-display-${commentId}`);
@@ -261,6 +330,49 @@
             var scrollBtn = document.getElementById('btn-scroll-comments'); if (scrollBtn) scrollBtn.addEventListener('click', function (e) {
                 e.preventDefault(); var target = document.getElementById('comments');
                 if (target && target.scrollIntoView) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+
+            // Load comment scores
+            document.querySelectorAll('[id^="comment-score-"]').forEach(async el => {
+                const commentId = el.id.replace('comment-score-', '');
+                try {
+                    const res = await fetch(`/Votes/CommentCount?commentId=${commentId}`);
+                    if (res.ok) {
+                        const json = await res.json();
+                        el.textContent = (json && typeof json.netScore !== 'undefined') ? json.netScore : 0;
+                    }
+                } catch (e) {}
+            });
+
+            // Comment voting functionality
+            document.querySelectorAll('.comment-upvote').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const commentId = this.getAttribute('data-comment-id');
+                    this.classList.add('active-up');
+                    const down = this.closest('.comment-actions')?.querySelector('.comment-downvote');
+                    if (down) down.classList.remove('active-down');
+                    sendCommentVote(commentId, true);
+                });
+            });
+
+            document.querySelectorAll('.comment-downvote').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const commentId = this.getAttribute('data-comment-id');
+                    this.classList.add('active-down');
+                    const up = this.closest('.comment-actions')?.querySelector('.comment-upvote');
+                    if (up) up.classList.remove('active-up');
+                    sendCommentVote(commentId, false);
+                });
+            });
+
+            // Comment sharing functionality
+            document.querySelectorAll('.comment-share').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const commentId = this.getAttribute('data-comment-id');
+                    shareComment(commentId);
+                });
             });
 
             // Minimal composer UX: expand on focus/typing, collapse when empty + blur

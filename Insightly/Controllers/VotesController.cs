@@ -76,5 +76,68 @@ namespace Insightly.Controllers
 
             return Ok(new { netScore });
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CommentVote(int commentId, bool isUpvote)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            bool removed = false;
+            var existingVote = await _context.CommentVotes
+                .FirstOrDefaultAsync(v => v.CommentId == commentId && v.UserId == user.Id);
+
+            if (existingVote != null)
+            {
+                if (existingVote.IsUpvote == isUpvote)
+                {
+                    _context.CommentVotes.Remove(existingVote);
+                    removed = true;
+                }
+                else
+                {
+                    existingVote.IsUpvote = isUpvote;
+                    _context.CommentVotes.Update(existingVote);
+                }
+            }
+            else
+            {
+                var vote = new CommentVote
+                {
+                    CommentId = commentId,
+                    UserId = user.Id,
+                    IsUpvote = isUpvote
+                };
+                _context.CommentVotes.Add(vote);
+            }
+
+            await _context.SaveChangesAsync();
+
+            var isAjax = string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
+
+            if (!isAjax)
+            {
+                return RedirectToAction("Details", "Articles", new { id = await GetArticleIdFromComment(commentId) });
+            }
+
+            return Ok(new { message = removed ? "Vote removed!" : "Vote saved!", removed });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CommentCount(int commentId)
+        {
+            var netScore = await _context.CommentVotes
+                .Where(v => v.CommentId == commentId)
+                .SumAsync(v => v.IsUpvote ? 1 : -1);
+
+            return Ok(new { netScore });
+        }
+
+        private async Task<int> GetArticleIdFromComment(int commentId)
+        {
+            var comment = await _context.Comments.FindAsync(commentId);
+            return comment?.ArticleId ?? 0;
+        }
     }
 }
