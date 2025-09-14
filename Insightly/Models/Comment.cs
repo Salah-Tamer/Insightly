@@ -25,5 +25,7 @@ namespace Insightly.Models
         
         [ForeignKey("ArticleId")]
         public virtual Article Article { get; set; } = null!;
+        
+        public virtual List<CommentVote> CommentVotes { get; set; } = new List<CommentVote>();
     }
 }

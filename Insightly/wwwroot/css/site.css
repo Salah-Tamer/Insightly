@@ -245,3 +245,31 @@ body { background-color: var(--bg); }
 .clickable-card .vote-btn {
     pointer-events: auto;
 }
+
+/* Comment actions styling */
+.comment-actions {
+    gap: .5rem;
+}
+
+.comment-actions .action-vote .btn-icon {
+    padding: .25rem;
+}
+
+.comment-actions .action-vote .btn-icon .bi {
+    font-size: 1rem;
+}
+
+.comment-actions .action-vote .btn-icon.comment-upvote.active-up .bi,
+.comment-actions .action-vote .btn-icon.comment-upvote:hover .bi {
+    color: var(--primary);
+}
+
+.comment-actions .action-vote .btn-icon.comment-downvote.active-down .bi,
+.comment-actions .action-vote .btn-icon.comment-downvote:hover .bi {
+    color: #7193ff;
+}
+
+.comment-actions .action-btn.pill:hover {
+    background: #ffeae6;
+    color: var(--pill-text);
+}

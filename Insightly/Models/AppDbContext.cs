@@ -10,6 +10,7 @@ namespace Insightly.Models
         public DbSet<Comment> Comments { get; set; }
         public DbSet<ArticleRead> ArticleReads { get; set; }
         public DbSet<Vote> Votes { get; set; }
+        public DbSet<CommentVote> CommentVotes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -93,6 +94,27 @@ namespace Insightly.Models
                 entity.HasOne(v => v.Article)
                     .WithMany(a => a.Votes)
                     .HasForeignKey(v => v.ArticleId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // CommentVote
+            modelBuilder.Entity<CommentVote>(entity =>
+            {
+                entity.HasKey(cv => cv.CommentVoteId);
+                entity.Property(cv => cv.CommentVoteId).IsRequired();
+
+                entity.HasIndex(cv => new { cv.UserId, cv.CommentId })
+                    .IsUnique()
+                    .HasDatabaseName("IX_CommentVotes_UserId_CommentId");
+
+                entity.HasOne(cv => cv.User)
+                    .WithMany(u => u.CommentVotes)
+                    .HasForeignKey(cv => cv.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(cv => cv.Comment)
+                    .WithMany(c => c.CommentVotes)
+                    .HasForeignKey(cv => cv.CommentId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
         }
