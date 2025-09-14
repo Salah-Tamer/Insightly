@@ -60,6 +60,7 @@ namespace Insightly.Controllers
                 content = comment.Content,
                 author = user.Name,
                 authorId = user.Id,
+                authorProfilePicture = user.ProfilePicture,
                 createdAt = comment.CreatedAt.ToString("dd MMM yyyy HH:mm"),
                 updatedAt = (string?)null,
                 isUpdated = false
@@ -80,6 +81,7 @@ namespace Insightly.Controllers
                     content = c.Content,
                     author = c.Author.Name,
                     authorId = c.AuthorId,
+                    authorProfilePicture = c.Author.ProfilePicture,
                     createdAt = c.CreatedAt.ToString("dd MMM yyyy HH:mm"),
                     updatedAt = c.UpdatedAt.HasValue ? c.UpdatedAt.Value.ToString("dd MMM yyyy HH:mm") : (string?)null,
                     isUpdated = c.UpdatedAt.HasValue
@@ -160,6 +162,7 @@ namespace Insightly.Controllers
                 content = comment.Content,
                 author = comment.Author.Name,
                 authorId = comment.AuthorId,
+                authorProfilePicture = comment.Author.ProfilePicture,
                 createdAt = comment.CreatedAt.ToString("dd MMM yyyy HH:mm"),
                 updatedAt = comment.UpdatedAt?.ToString("dd MMM yyyy HH:mm"),
                 isUpdated = comment.UpdatedAt.HasValue
