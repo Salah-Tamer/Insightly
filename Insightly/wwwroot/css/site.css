@@ -173,11 +173,17 @@ body { background-color: var(--bg); }
     font-weight: 500;
     background-color: var(--primary);
     border-color: var(--primary);
+    color: #ffffff;
 }
 
 .auth-btn:hover, .auth-btn:focus {
     background-color: #ff331e;
     border-color: #ff331e;
+    color: #ffffff;
+}
+
+.auth-btn .bi {
+    margin-inline-end: .5rem !important;
 }
 
 .auth-form .form-floating {
