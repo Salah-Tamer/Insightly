@@ -12,11 +12,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Insightly.Models;
+using Insightly.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Http;
 
 namespace Insightly.Areas.Identity.Pages.Account
 {
@@ -27,18 +30,24 @@ namespace Insightly.Areas.Identity.Pages.Account
         private readonly IUserStore<ApplicationUser> _userStore;
         private readonly IUserEmailStore<ApplicationUser> _emailStore;
         private readonly ILogger<RegisterModel> _logger;
+        private readonly IEmailSender _emailSender;
+        private readonly IVerificationCodeService _verificationCodeService;
 
         public RegisterModel(
             UserManager<ApplicationUser> userManager,
             IUserStore<ApplicationUser> userStore,
             SignInManager<ApplicationUser> signInManager,
-            ILogger<RegisterModel> logger)
+            ILogger<RegisterModel> logger,
+            IEmailSender emailSender,
+            IVerificationCodeService verificationCodeService)
         {
             _userManager = userManager;
             _userStore = userStore;
             _emailStore = GetEmailStore();
             _signInManager = signInManager;
             _logger = logger;
+            _emailSender = emailSender;
+            _verificationCodeService = verificationCodeService;
         }
 
         [BindProperty]
@@ -103,12 +112,68 @@ namespace Insightly.Areas.Identity.Pages.Account
 
                     await _userManager.AddToRoleAsync(user, "User");
 
-                    user.EmailConfirmed = true;
-                    await _userManager.UpdateAsync(user);
+                    // Generate 5-digit verification code
+                    var userId = await _userManager.GetUserIdAsync(user);
+                    var verificationCode = await _verificationCodeService.GenerateCodeAsync(userId);
 
-                    await _signInManager.SignInAsync(user, isPersistent: false);
+                    // Send email with verification code
+                    var emailSubject = "Verify your email - Your verification code";
+                    var emailBody = $@"
+                                 <html>
+<head>
+    <meta charset=""UTF-8"">
+    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+</head>
+<body style=""font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5; padding: 0; margin: 0;"">
+    <div style=""max-width: 600px; margin: 40px auto; background-color: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);"">
+        <!-- Header -->
+        <div style=""background-color: #ff5747; padding: 30px; text-align: center;"">
+            <h1 style=""color: white; margin: 0; font-size: 32px; font-weight: 600;"">Insightly</h1>
+        </div>
+        
+        <!-- Content -->
+        <div style=""padding: 40px;"">
+            <!-- Title -->
+            <h2 style=""color: #2c3e50; text-align: center; font-weight: 600; margin: 0 0 30px 0; font-size: 28px;"">New Verification Code</h2>
+            
+            <!-- Greeting -->
+            <p style=""color: #5a6c7d; font-size: 16px; line-height: 1.6; margin-bottom: 20px;"">Hello {user.Name},</p>
+            
+            <!-- Message -->
+            <p style=""color: #5a6c7d; font-size: 16px; line-height: 1.6; margin-bottom: 30px; text-align: center;"">Here is your new verification code:</p>
+            
+            <!-- Code Display -->
+            <div style=""text-align: center; margin: 35px 0;"">
+                <div style=""background-color: #ff5747; display: inline-block; padding: 20px 40px; border-radius: 8px;"">
+                    <span style=""color: white; font-size: 36px; letter-spacing: 12px; font-weight: 600;"">{verificationCode}</span>
+                </div>
+            </div>
+            
+            <!-- Warning Box -->
+            <div style=""background-color: #fef5f5; border: 1px solid #fde0dd; padding: 15px; border-radius: 6px; margin: 30px 0;"">
+                <p style=""color: #d8504c; font-size: 14px; margin: 0; text-align: center;"">
+                    If you didn't request this verification code, please ignore this email.
+                </p>
+            </div>
+            
+            <!-- Expiration Notice -->
+            <p style=""color: #7a8a9a; font-size: 14px; text-align: center; margin-top: 25px;"">
+                This code will expire in <strong>15 minutes</strong>.
+            </p>
+        </div>
+    </div>
+</body>
+</html>";
 
-                    return LocalRedirect(returnUrl);
+                    await _emailSender.SendEmailAsync(Input.Email, emailSubject, emailBody);
+
+                    // Store user ID in TempData to use in verification page
+                    TempData["UserId"] = userId;
+                    TempData["UserEmail"] = Input.Email;
+                    TempData["ReturnUrl"] = returnUrl;
+
+                    // Redirect to verification page
+                    return RedirectToPage("VerifyCode");
                 }
 
                 foreach (var error in result.Errors)
