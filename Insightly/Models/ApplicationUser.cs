@@ -19,7 +19,7 @@ namespace Insightly.Models
         [StringLength(500)]
         public string? Bio { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         public virtual List<Article> Articles { get; set; } = new();
         public virtual List<ArticleRead> SavedArticles { get; set; } = new();
