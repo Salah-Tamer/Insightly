@@ -273,3 +273,31 @@ body { background-color: var(--bg); }
     background: #ffeae6;
     color: var(--pill-text);
 }
+/* Add these styles to your main CSS file for the Verify Code page */
+.auth-page .verify-icon {
+    width: 80px;
+    height: 80px;
+    background-color: var(--primary);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    color: white;
+}
+
+.auth-page .code-digit {
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+    font-weight: bold;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+    .auth-page .code-digit:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(255, 75, 55, 0.15);
+        outline: none;
+    }
