@@ -22,7 +22,7 @@ namespace Insightly.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public virtual List<Article> Articles { get; set; } = new();
-        public virtual List<ArticleRead> ReadArticles { get; set; } = new();
+        public virtual List<ArticleRead> SavedArticles { get; set; } = new();
         public virtual List<Comment> Comments { get; set; } = new(); 
         public virtual List<Vote> Votes { get; set; } = new();
         public virtual List<CommentVote> CommentVotes { get; set; } = new();

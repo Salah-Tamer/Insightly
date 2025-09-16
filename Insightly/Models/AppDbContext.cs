@@ -73,7 +73,7 @@ namespace Insightly.Models
                     .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasOne(ar => ar.User)
-                    .WithMany(u => u.ReadArticles)
+                    .WithMany(u => u.SavedArticles)
                     .HasForeignKey(ar => ar.UserId)
                     .OnDelete(DeleteBehavior.Restrict);
             });

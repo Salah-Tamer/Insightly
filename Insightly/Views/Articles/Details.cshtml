@@ -63,11 +63,11 @@
                 <button class="action-btn pill" id="btn-share" type="button" aria-label="Share" style="background-color: #e9ecef; border-color: #dee2e6; color: #000000 !important;"><i class="bi bi-share" style="color: #000000 !important;"></i><span class="d-none d-sm-inline ms-1" style="color: #000000 !important;">Share</span></button>
                 @if (User.Identity != null && User.Identity.IsAuthenticated)
                 {
-                    <form asp-controller="Articles" asp-action="MarkAsRead" asp-route-id="@Model.ArticleId" method="post" class="d-inline">
+                    <form asp-controller="Articles" asp-action="Save" asp-route-id="@Model.ArticleId" method="post" class="d-inline">
                         @Html.AntiForgeryToken()
-                        <button type="submit" class="action-btn pill btn-icon @(ViewBag.IsRead == true ? "is-on" : "")" title="Mark as read" @(ViewBag.IsRead == true ? "disabled" : "") style="background-color: #e9ecef; border-color: #dee2e6; color: #000000 !important;">
-                            <i class="bi @(ViewBag.IsRead == true ? "bi-check2-circle" : "bi-journal-bookmark")" style="color: #000000 !important;"></i>
-                            <span class="d-none d-sm-inline ms-1" style="color: #000000 !important;">Read</span>
+                        <button type="submit" class="action-btn pill btn-icon @(ViewBag.IsRead == true ? "is-on" : "")" title="Save article" @(ViewBag.IsRead == true ? "disabled" : "") style="background-color: #e9ecef; border-color: #dee2e6; color: #000000 !important;">
+                            <i class="bi @(ViewBag.IsRead == true ? "bi-bookmark-fill" : "bi-bookmark")" style="color: #000000 !important;"></i>
+                            <span class="d-none d-sm-inline ms-1" style="color: #000000 !important;">Save</span>
                         </button>
                     </form>
                 }

@@ -201,7 +201,7 @@ namespace Insightly.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
-        public async Task<IActionResult> MarkAsRead(int id)
+        public async Task<IActionResult> Save(int id)
         {
             var currentUser = await _userManager.GetUserAsync(User);
             if (currentUser == null)
@@ -235,15 +235,15 @@ namespace Insightly.Controllers
 
             if (!isAjax)
             {
-                TempData["SuccessMessage"] = "Article marked as read!";
+                TempData["SuccessMessage"] = "Article saved!";
                 return RedirectToAction(nameof(Details), new { id });
             }
 
-            return Json(new { success = true, message = "Article marked as read!" });
+            return Json(new { success = true, message = "Article saved!" });
         }
 
         [Authorize]
-        public async Task<IActionResult> ReadArticles()
+        public async Task<IActionResult> SavedArticles()
         {
             var currentUser = await _userManager.GetUserAsync(User);
             if (currentUser == null)
