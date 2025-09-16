@@ -19,7 +19,7 @@
                 <div>
                     <div class="post-meta small mb-1">
                         <span class="chip me-2">Article</span>
-                        Posted by <a asp-controller="Profile" asp-action="ViewProfile" asp-route-id="@Model.AuthorId" class="text-decoration-none fw-bold" style="color: #ff4b37 !important;">@Model.Author.Name</a> • @Model.CreatedAt.ToString("dd MMM yyyy")
+                        Posted by <a asp-controller="Profile" asp-action="ViewProfile" asp-route-id="@Model.AuthorId" class="text-decoration-none fw-bold" style="color: #ff4b37 !important;">@Model.Author.Name</a> • @Model.CreatedAt.ToString("dd MMM h:mm tt")
                     </div>
                     <h2 class="mb-0">@Model.Title</h2>
                 </div>
@@ -157,13 +157,13 @@
                                                 @if (comment.UpdatedAt.HasValue)
                                                 {
                                                     <span class="text-muted small">
-                                                        <i class="bi bi-pencil-square me-1"></i>edited @comment.UpdatedAt.Value.ToString("dd MMM yyyy HH:mm")
+                                                        <i class="bi bi-pencil-square me-1"></i>edited @comment.UpdatedAt.Value.ToString("dd MMM h:mm tt")
                                                     </span>
                                                 }
                                                 else
                                                 {
                                                     <span class="text-muted small">
-                                                        <i class="bi bi-clock me-1"></i>@comment.CreatedAt.ToString("dd MMM yyyy HH:mm")
+                                                        <i class="bi bi-clock me-1"></i>@comment.CreatedAt.ToString("dd MMM h:mm tt")
                                                     </span>
                                                 }
                                             </div>
