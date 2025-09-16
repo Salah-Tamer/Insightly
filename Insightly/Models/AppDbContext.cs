@@ -11,7 +11,7 @@ namespace Insightly.Models
         public DbSet<ArticleRead> ArticleReads { get; set; }
         public DbSet<Vote> Votes { get; set; }
         public DbSet<CommentVote> CommentVotes { get; set; }
-
+        public DbSet<Follow> Follows { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -117,6 +117,29 @@ namespace Insightly.Models
                     .HasForeignKey(cv => cv.CommentId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
+
+
+            //Follow
+            modelBuilder.Entity<Follow>(entity =>
+            {
+                entity.HasKey(f => f.Id);
+
+                entity.HasOne(f => f.Follower)
+                    .WithMany(u => u.Following)
+                    .HasForeignKey(f => f.FollowerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(f => f.Following)
+                    .WithMany(u => u.Followers)
+                    .HasForeignKey(f => f.FollowingId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(f => new { f.FollowerId, f.FollowingId })
+                    .IsUnique()
+                    .HasDatabaseName("IX_Follows_FollowerId_FollowingId");
+            });
+
+
         }
     }
 }

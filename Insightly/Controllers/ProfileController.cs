@@ -155,24 +155,40 @@ namespace Insightly.Controllers
 
             return View(model);
         }
-
         public async Task<IActionResult> ViewProfile(string id)
         {
             var user = await _userManager.FindByIdAsync(id);
-            
+
             if (user == null)
             {
                 return NotFound();
             }
 
-            // Get user's articles
             var articles = await _context.Articles
                 .Where(a => a.AuthorId == id)
                 .OrderByDescending(a => a.CreatedAt)
                 .ToListAsync();
 
+            var followersCount = await _context.Follows.CountAsync(f => f.FollowingId == id);
+            var followingCount = await _context.Follows.CountAsync(f => f.FollowerId == id);
+
+            var currentUser = await _userManager.GetUserAsync(User);
+            var isFollowing = false;
+
+            if (currentUser != null)
+            {
+                isFollowing = await _context.Follows
+                    .AnyAsync(f => f.FollowerId == currentUser.Id && f.FollowingId == id);
+            }
+
             ViewBag.Articles = articles;
+            ViewBag.FollowersCount = followersCount;
+            ViewBag.FollowingCount = followingCount;
+            ViewBag.IsFollowing = isFollowing;
+
             return View(user);
         }
+
+
     }
 }

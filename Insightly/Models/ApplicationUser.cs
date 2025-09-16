@@ -26,6 +26,8 @@ namespace Insightly.Models
         public virtual List<Comment> Comments { get; set; } = new(); 
         public virtual List<Vote> Votes { get; set; } = new();
         public virtual List<CommentVote> CommentVotes { get; set; } = new();
+        public virtual List<Follow> Followers { get; set; } = new(); 
+        public virtual List<Follow> Following { get; set; } = new();
     }
 }
 
