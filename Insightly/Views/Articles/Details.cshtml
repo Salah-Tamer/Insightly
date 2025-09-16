@@ -26,13 +26,15 @@
                 @if (User.Identity != null && User.Identity.IsAuthenticated)
                 {
                     <div>
-                        @if (User.IsInRole("Admin"))
-                        {
-                            <a asp-action="Delete" asp-route-id="@Model.ArticleId" class="btn btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></a>
-                        }
-                        else if (Model.AuthorId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value)
+                        @* Show Edit when the current user is the author (admin or not) *@
+                        @if (Model.AuthorId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value)
                         {
                             <a asp-action="Edit" asp-route-id="@Model.ArticleId" class="btn btn-outline-secondary me-2" title="Edit"><i class="bi bi-pencil"></i></a>
+                        }
+                        
+                        @* Show Delete when author or admin *@
+                        @if (Model.AuthorId == User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value || User.IsInRole("Admin"))
+                        {
                             <a asp-action="Delete" asp-route-id="@Model.ArticleId" class="btn btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></a>
                         }
                     </div>

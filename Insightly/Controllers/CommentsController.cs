@@ -146,7 +146,12 @@ namespace Insightly.Controllers
             }
 
             var user = await _userManager.GetUserAsync(User);
-            if (user == null || (comment.AuthorId != user.Id))
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            if (comment.AuthorId != user.Id)
             {
                 return Forbid();
             }

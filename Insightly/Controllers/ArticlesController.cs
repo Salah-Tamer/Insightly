@@ -98,7 +98,12 @@ namespace Insightly.Controllers
             }
 
             var user = await _userManager.GetUserAsync(User);
-            if (user == null || article.AuthorId != user.Id)
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            if (article.AuthorId != user.Id)
             {
                 return Forbid();
             }
@@ -116,7 +121,12 @@ namespace Insightly.Controllers
             if (existingArticle == null) return NotFound();
 
             var user = await _userManager.GetUserAsync(User);
-            if (user == null || existingArticle.AuthorId != user.Id)
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            if (existingArticle.AuthorId != user.Id)
             {
                 return Forbid();
             }

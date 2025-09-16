@@ -20,7 +20,7 @@ builder.Services.AddRazorPages();
 
 var app = builder.Build();
 
-// Seed required roles on startup
+// Seed required roles and admin user on startup
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
