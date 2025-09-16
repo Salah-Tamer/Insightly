@@ -46,7 +46,7 @@ body { background-color: var(--bg); }
 
 /* Votes in action bar */
 .action-vote .btn-icon { padding: .25rem; }
-.action-vote .btn-icon .bi { font-size: 1rem; }
+.action-vote .btn-icon .bi { font-size: 1rem; color: #000; }
 .action-vote .btn-icon#ab-upvote.active-up .bi, .action-vote .btn-icon#ab-upvote:hover .bi { color: var(--primary); }
 .action-vote .btn-icon#ab-downvote.active-down .bi, .action-vote .btn-icon#ab-downvote:hover .bi { color: #7193ff; }
 
@@ -91,7 +91,7 @@ body { background-color: var(--bg); }
 .pill .score, .pill span { color: var(--pill-text); }
 .action-vote.pill { gap: .25rem; }
 .action-vote.pill .btn-icon { padding: 0; background: transparent; border: none; color: inherit; }
-.action-vote.pill .btn-icon .bi { font-size: 1rem; }
+.action-vote.pill .btn-icon .bi { font-size: 1rem; color: #000; }
 .action-btn.pill:hover { background: #ffeae6; color: var(--pill-text); }
 
 /* Comment composer */
@@ -257,6 +257,7 @@ body { background-color: var(--bg); }
 
 .comment-actions .action-vote .btn-icon .bi {
     font-size: 1rem;
+    color: #000;
 }
 
 .comment-actions .action-vote .btn-icon.comment-upvote.active-up .bi,

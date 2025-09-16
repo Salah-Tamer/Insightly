@@ -77,6 +77,20 @@ namespace Insightly.Controllers
             return Ok(new { netScore });
         }
 
+        [HttpGet]
+        public async Task<IActionResult> UserArticleVote(int articleId)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            var vote = await _context.Votes
+                .AsNoTracking()
+                .FirstOrDefaultAsync(v => v.ArticleId == articleId && v.UserId == user.Id);
+
+            if (vote == null) return Ok(new { voted = false });
+            return Ok(new { voted = true, isUpvote = vote.IsUpvote });
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CommentVote(int commentId, bool isUpvote)
@@ -132,6 +146,20 @@ namespace Insightly.Controllers
                 .SumAsync(v => v.IsUpvote ? 1 : -1);
 
             return Ok(new { netScore });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> UserCommentVote(int commentId)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            var vote = await _context.CommentVotes
+                .AsNoTracking()
+                .FirstOrDefaultAsync(v => v.CommentId == commentId && v.UserId == user.Id);
+
+            if (vote == null) return Ok(new { voted = false });
+            return Ok(new { voted = true, isUpvote = vote.IsUpvote });
         }
 
         private async Task<int> GetArticleIdFromComment(int commentId)

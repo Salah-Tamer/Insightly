@@ -51,14 +51,14 @@
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="articleId" value="@Model.ArticleId" />
                         <input type="hidden" name="isUpvote" value="true" />
-                        <button type="submit" class="action-btn btn-icon" aria-label="Upvote" style="color: #000000 !important;"><i class="bi bi-arrow-up" style="color: #000000 !important;"></i></button>
+                        <button type="submit" id="ab-upvote" class="action-btn btn-icon" data-article-id="@Model.ArticleId" aria-label="Upvote"><i class="bi bi-arrow-up"></i></button>
                     </form>
                     <span class="score mx-1" id="ab-score" style="color: #000000 !important;">@ViewBag.NetScore</span>
                     <form asp-controller="Votes" asp-action="Vote" method="post" class="d-inline">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="articleId" value="@Model.ArticleId" />
                         <input type="hidden" name="isUpvote" value="false" />
-                        <button type="submit" class="action-btn btn-icon" aria-label="Downvote" style="color: #000000 !important;"><i class="bi bi-arrow-down" style="color: #000000 !important;"></i></button>
+                        <button type="submit" id="ab-downvote" class="action-btn btn-icon" data-article-id="@Model.ArticleId" aria-label="Downvote"><i class="bi bi-arrow-down"></i></button>
                     </form>
                 </div>
                 <a href="#comments" class="action-btn pill comment" id="btn-scroll-comments" aria-label="Comments" style="background-color: #e9ecef; border-color: #dee2e6; color: #000000 !important;"><i class="bi bi-chat" style="color: #000000 !important;"></i><span id="comments-count-top" style="color: #000000 !important;">@ViewBag.CommentsCount</span></a>
@@ -199,14 +199,14 @@
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="commentId" value="@comment.CommentId" />
                                                     <input type="hidden" name="isUpvote" value="true" />
-                                                    <button type="submit" class="action-btn btn-icon comment-upvote" data-comment-id="@comment.CommentId" aria-label="Upvote comment" style="color: #000000 !important;"><i class="bi bi-arrow-up" style="color: #000000 !important;"></i></button>
+                                                    <button type="submit" class="action-btn btn-icon comment-upvote" data-comment-id="@comment.CommentId" aria-label="Upvote comment"><i class="bi bi-arrow-up"></i></button>
                                                 </form>
                                                 <span class="score mx-1" id="comment-score-@comment.CommentId" style="color: #000000 !important;">0</span>
                                                 <form asp-controller="Votes" asp-action="CommentVote" method="post" class="d-inline">
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="commentId" value="@comment.CommentId" />
                                                     <input type="hidden" name="isUpvote" value="false" />
-                                                    <button type="submit" class="action-btn btn-icon comment-downvote" data-comment-id="@comment.CommentId" aria-label="Downvote comment" style="color: #000000 !important;"><i class="bi bi-arrow-down" style="color: #000000 !important;"></i></button>
+                                                    <button type="submit" class="action-btn btn-icon comment-downvote" data-comment-id="@comment.CommentId" aria-label="Downvote comment"><i class="bi bi-arrow-down"></i></button>
                                                 </form>
                                             </div>
                                             <button class="action-btn pill comment-share" data-comment-id="@comment.CommentId" type="button" aria-label="Share comment" style="background-color: #e9ecef; border-color: #dee2e6; color: #000000 !important;"><i class="bi bi-share" style="color: #000000 !important;"></i><span class="d-none d-sm-inline ms-1" style="color: #000000 !important;">Share</span></button>
@@ -285,24 +285,25 @@
                 const formData = new FormData();
                 formData.append('commentId', commentId);
                 formData.append('isUpvote', isUpvote);
-                formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+                const tokenEl = document.querySelector('form[action="/Votes/CommentVote"] input[name="__RequestVerificationToken"]');
+                if (tokenEl) formData.append('__RequestVerificationToken', tokenEl.value);
 
-                const res = await fetch('/Votes/CommentVote', {
-                    method: 'POST',
-                    body: formData
-                });
+                const res = await fetch('/Votes/CommentVote', { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
                 
+                if (res.status === 401) { window.location.href = '/Identity/Account/Login'; return { removed: false }; }
                 if (res.ok) {
+                    let removed = false;
+                    try { const j = await res.json(); removed = !!(j && j.removed); } catch (e) {}
                     const c = await fetch(`/Votes/CommentCount?commentId=${commentId}`);
                     if (c.ok) {
                         const json = await c.json();
                         const s = document.getElementById(`comment-score-${commentId}`);
                         if (s) s.textContent = (json && typeof json.netScore !== 'undefined') ? json.netScore : 0;
                     }
-                } else if (res.status === 401) {
-                    window.location.href = '/Identity/Account/Login';
+                    return { removed };
                 }
-            } catch (e) {}
+            } catch (e) { }
+            return { removed: false };
         }
 
         async function shareComment(commentId) {
@@ -361,6 +362,73 @@
                 if (target && target.scrollIntoView) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
 
+            // Article voting: init, load score and existing user vote, and attach handlers
+            (function initArticleVoting() {
+                const up = document.getElementById('ab-upvote');
+                const down = document.getElementById('ab-downvote');
+                const scoreEl = document.getElementById('ab-score');
+                const tokenEl = document.querySelector('form[action="/Votes/Vote"] input[name="__RequestVerificationToken"]');
+                const articleId = up?.getAttribute('data-article-id') || down?.getAttribute('data-article-id');
+                if (!articleId) return;
+
+                (async () => {
+                    try {
+                        const r = await fetch(`/Votes/Count?articleId=${articleId}`);
+                        if (r.ok && scoreEl) {
+                            const j = await r.json();
+                            scoreEl.textContent = (j && typeof j.netScore !== 'undefined') ? j.netScore : scoreEl.textContent;
+                        }
+                    } catch (e) {}
+
+                    try {
+                        const rv = await fetch(`/Votes/UserArticleVote?articleId=${articleId}`);
+                        if (rv.ok) {
+                            const v = await rv.json();
+                            if (v && v.voted === true) {
+                                if (v.isUpvote) { up?.classList.add('active-up'); down?.classList.remove('active-down'); }
+                                else { down?.classList.add('active-down'); up?.classList.remove('active-up'); }
+                            } else {
+                                up?.classList.remove('active-up');
+                                down?.classList.remove('active-down');
+                            }
+                        }
+                    } catch (e) {}
+                })();
+
+                async function sendArticleVote(isUpvote) {
+                    try {
+                        const formData = new FormData();
+                        formData.append('articleId', articleId);
+                        formData.append('isUpvote', isUpvote);
+                        if (tokenEl) formData.append('__RequestVerificationToken', tokenEl.value);
+
+                        const res = await fetch('/Votes/Vote', { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                        if (res.status === 401) { window.location.href = '/Identity/Account/Login'; return; }
+                        if (!res.ok) return;
+                        let removed = false; try { const j = await res.json(); removed = !!(j && j.removed); } catch (e) {}
+
+                        try {
+                            const c = await fetch(`/Votes/Count?articleId=${articleId}`);
+                            if (c.ok && scoreEl) {
+                                const json = await c.json();
+                                scoreEl.textContent = (json && typeof json.netScore !== 'undefined') ? json.netScore : scoreEl.textContent;
+                            }
+                        } catch (e) {}
+
+                        if (isUpvote) {
+                            if (removed) { up?.classList.remove('active-up'); }
+                            else { up?.classList.add('active-up'); down?.classList.remove('active-down'); }
+                        } else {
+                            if (removed) { down?.classList.remove('active-down'); }
+                            else { down?.classList.add('active-down'); up?.classList.remove('active-up'); }
+                        }
+                    } catch (e) {}
+                }
+
+                if (up) up.addEventListener('click', function (e) { e.preventDefault(); sendArticleVote(true); });
+                if (down) down.addEventListener('click', function (e) { e.preventDefault(); sendArticleVote(false); });
+            })();
+
             // Load comment scores
             document.querySelectorAll('[id^="comment-score-"]').forEach(async el => {
                 const commentId = el.id.replace('comment-score-', '');
@@ -373,26 +441,52 @@
                 } catch (e) {}
             });
 
+            // Load current user's vote state for each comment
+            document.querySelectorAll('.comment-actions .comment-upvote').forEach(async btn => {
+                const commentId = btn.getAttribute('data-comment-id');
+                const downBtn = btn.closest('.comment-actions')?.querySelector('.comment-downvote');
+                try {
+                    const rv = await fetch(`/Votes/UserCommentVote?commentId=${commentId}`);
+                    if (rv.ok) {
+                        const v = await rv.json();
+                        if (v && v.voted === true) {
+                            if (v.isUpvote) { btn.classList.add('active-up'); if (downBtn) downBtn.classList.remove('active-down'); }
+                            else { if (downBtn) downBtn.classList.add('active-down'); btn.classList.remove('active-up'); }
+                        } else {
+                            btn.classList.remove('active-up'); if (downBtn) downBtn.classList.remove('active-down');
+                        }
+                    }
+                } catch (e) {}
+            });
+
             // Comment voting functionality
             document.querySelectorAll('.comment-upvote').forEach(btn => {
-                btn.addEventListener('click', function(e) {
+                btn.addEventListener('click', async function(e) {
                     e.preventDefault();
                     const commentId = this.getAttribute('data-comment-id');
-                    this.classList.add('active-up');
                     const down = this.closest('.comment-actions')?.querySelector('.comment-downvote');
-                    if (down) down.classList.remove('active-down');
-                    sendCommentVote(commentId, true);
+                    const { removed } = await sendCommentVote(commentId, true);
+                    if (removed) {
+                        this.classList.remove('active-up');
+                    } else {
+                        this.classList.add('active-up');
+                        if (down) down.classList.remove('active-down');
+                    }
                 });
             });
 
             document.querySelectorAll('.comment-downvote').forEach(btn => {
-                btn.addEventListener('click', function(e) {
+                btn.addEventListener('click', async function(e) {
                     e.preventDefault();
                     const commentId = this.getAttribute('data-comment-id');
-                    this.classList.add('active-down');
                     const up = this.closest('.comment-actions')?.querySelector('.comment-upvote');
-                    if (up) up.classList.remove('active-up');
-                    sendCommentVote(commentId, false);
+                    const { removed } = await sendCommentVote(commentId, false);
+                    if (removed) {
+                        this.classList.remove('active-down');
+                    } else {
+                        this.classList.add('active-down');
+                        if (up) up.classList.remove('active-up');
+                    }
                 });
             });
 
