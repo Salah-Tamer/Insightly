@@ -71,7 +71,6 @@ namespace Insightly.Areas.Identity.Pages.Account
                     protocol: Request.Scheme);
 
 
-                // Create a beautiful HTML email template
                 // In your C# code (e.g., an EmailService class)
                 // Make sure you have the callbackUrl variable defined
                 string emailBody = $"""
