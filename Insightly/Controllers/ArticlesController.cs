@@ -88,7 +88,7 @@ namespace Insightly.Controllers
 
             return View(article);
         }
-        [Authorize(Roles = "Admin,User")]
+        [Authorize]
         public async Task<IActionResult> Edit(int id)
         {
             var article = await _context.Articles.FindAsync(id);
@@ -97,14 +97,29 @@ namespace Insightly.Controllers
                 return NotFound();
             }
 
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null || article.AuthorId != user.Id)
+            {
+                return Forbid();
+            }
+
             return View(article);
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,User")]
+        [Authorize]
         public async Task<IActionResult> Edit(int id, [Bind("ArticleId,Title,Content")] Article article)
         {
             if (id != article.ArticleId) return NotFound();
+
+            var existingArticle = await _context.Articles.FindAsync(id);
+            if (existingArticle == null) return NotFound();
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null || existingArticle.AuthorId != user.Id)
+            {
+                return Forbid();
+            }
 
             // Clear ModelState errors for fields we're not binding
             ModelState.Remove("AuthorId");
@@ -115,9 +130,6 @@ namespace Insightly.Controllers
             {
                 try
                 {
-                    var existingArticle = await _context.Articles.FindAsync(id);
-                    if (existingArticle == null) return NotFound();
-
                     existingArticle.Title = article.Title;
                     existingArticle.Content = article.Content;
                     existingArticle.UpdatedAt = DateTime.Now;
@@ -135,7 +147,7 @@ namespace Insightly.Controllers
             }
             return View(article);
         }
-        [Authorize(Roles = "Admin,User")]
+        [Authorize]
         public async Task<IActionResult> Delete(int id)
         {
             var article = await _context.Articles
@@ -144,16 +156,40 @@ namespace Insightly.Controllers
 
             if (article == null) return NotFound();
 
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            bool isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
+            if (article.AuthorId != user.Id && !isAdmin)
+            {
+                return Forbid();
+            }
+
             return View(article);
         }
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,User")]
+        [Authorize]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var article = await _context.Articles.FindAsync(id);
             if (article == null) return NotFound();
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            bool isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
+            if (article.AuthorId != user.Id && !isAdmin)
+            {
+                return Forbid();
+            }
 
             _context.Articles.Remove(article);
             await _context.SaveChangesAsync();

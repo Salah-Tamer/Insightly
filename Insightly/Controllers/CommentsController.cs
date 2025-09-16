@@ -102,7 +102,14 @@ namespace Insightly.Controllers
             }
 
             var user = await _userManager.GetUserAsync(User);
-            if (user == null || (comment.AuthorId != user.Id))
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            // Allow deletion if user is the comment author OR if user is an admin
+            bool isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
+            if (comment.AuthorId != user.Id && !isAdmin)
             {
                 return Forbid();
             }

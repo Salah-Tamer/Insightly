@@ -59,3 +59,7 @@ appsettings.Development.json
 
 # User uploaded files
 wwwroot/uploads/
+
+# Exclude Visual Studio publish profiles
+*.pubxml
+*.pubxml.user
