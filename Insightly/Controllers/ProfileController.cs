@@ -38,8 +38,12 @@ namespace Insightly.Controllers
                 .Where(a => a.AuthorId == userId)
                 .OrderByDescending(a => a.CreatedAt)
                 .ToListAsync();
+            var followersCount = await _context.Follows.CountAsync(f => f.FollowingId == user.Id);
+            var followingCount = await _context.Follows.CountAsync(f => f.FollowerId == user.Id);
 
             ViewBag.Articles = articles;
+            ViewBag.FollowersCount = followersCount;
+            ViewBag.FollowingCount = followingCount;
             return View(user);
         }
 
