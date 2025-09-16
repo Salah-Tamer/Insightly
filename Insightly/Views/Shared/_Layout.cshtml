@@ -136,7 +136,6 @@
                     <nav class="list-group list-group-flush">
                         <a class="list-group-item list-group-item-action" asp-controller="Home" asp-action="Index"><i class="bi bi-house me-2"></i>Home</a>
                         <a class="list-group-item list-group-item-action" asp-controller="Articles" asp-action="Create"><i class="bi bi-plus-circle me-2"></i>Create Article</a>
-                        <a class="list-group-item list-group-item-action" asp-controller="Search" asp-action="Index"><i class="bi bi-search me-2"></i>Search Articles</a>
                         <a class="list-group-item list-group-item-action" asp-controller="Profile" asp-action="Index"><i class="bi bi-person me-2"></i>My Profile</a>
                         <a class="list-group-item list-group-item-action" asp-controller="Articles" asp-action="SavedArticles"><i class="bi bi-bookmark me-2"></i>Saved Articles</a>
                     </nav>
@@ -152,7 +151,6 @@
                     <nav class="nav flex-column sidebar-nav">
                         <a class="nav-link" asp-controller="Home" asp-action="Index"><i class="bi bi-house me-2"></i>Home</a>
                         <a class="nav-link" asp-controller="Articles" asp-action="Create"><i class="bi bi-plus-circle me-2"></i>Create Article</a>
-                        <a class="nav-link" asp-controller="Search" asp-action="Index"><i class="bi bi-search me-2"></i>Search Articles</a>
                         <a class="nav-link" asp-controller="Profile" asp-action="Index"><i class="bi bi-person me-2"></i>My Profile</a>
                         <a class="nav-link" asp-controller="Articles" asp-action="SavedArticles"><i class="bi bi-bookmark me-2"></i>Saved Articles</a>
                     </nav>
@@ -354,7 +352,7 @@
                         pageTitle.innerHTML = '<i class="bi bi-search me-2"></i>Search Results';
                         pageSubtitle.innerHTML = `Results for "<strong>${data.query}</strong>" (${data.count} ${data.count === 1 ? 'article' : 'articles'} found)`;
                     } else {
-                        pageTitle.innerHTML = '<i class="bi bi-journal-text me-2"></i>Browse All Articles';
+                        pageTitle.innerHTML = '<i class="bi bi-journal-text me-2"></i>All Articles';
                         pageSubtitle.innerHTML = 'Discover and read articles from our community';
                     }
                 }
@@ -371,7 +369,7 @@
                             <h4>No articles found</h4>
                             <p class="text-muted">No articles match your search for "<strong>${query}</strong>". Try adjusting your search terms.</p>
                             <button class="btn btn-outline-primary" onclick="clearSearch()">
-                                <i class="bi bi-arrow-left me-2"></i>Browse All Articles
+                                <i class="bi bi-arrow-left me-2"></i>Show All Articles
                             </button>
                         `;
                     } else {
