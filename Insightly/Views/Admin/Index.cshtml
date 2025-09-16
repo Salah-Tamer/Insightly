@@ -1,0 +1,41 @@
+@{
+    ViewData["Title"] = "Admin";
+}
+
+<div class="home-page container py-3">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-shield-lock me-2"></i>Admin Panel</h2>
+            <p class="text-muted small mb-0">Promote a user to Admin by email</p>
+        </div>
+    </div>
+
+    <!-- Promote User Card -->
+    <div class="post-card">
+        <div class="p-3">
+            <form asp-controller="Admin" asp-action="PromoteByEmail" method="post">
+                <div class="mb-3">
+                    <label for="email" class="form-label fw-semibold small">User Email</label>
+                    <input type="email" class="form-control" id="email" name="email" placeholder="user@example.com" required />
+                    <div class="form-text small">Enter the exact email of the user you want to promote.</div>
+                </div>
+
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary" style="background-color: #ff4b37; border-color: #ff4b37;">
+                            <i class="bi bi-arrow-up-circle me-1"></i>Promote to Admin
+                        </button>
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                    <div class="text-muted small">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Admins can manage other users
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
