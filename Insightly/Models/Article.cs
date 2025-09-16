@@ -17,6 +17,8 @@ namespace Insightly.Models
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
         
+        public string? ImagePath { get; set; }
+        
         [Required]
         public string AuthorId { get; set; } = string.Empty;
         

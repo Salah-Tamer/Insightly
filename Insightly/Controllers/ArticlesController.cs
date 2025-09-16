@@ -26,7 +26,7 @@ namespace Insightly.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,User")]
-        public async Task<IActionResult> Create([FromForm] string title, [FromForm] string content)
+        public async Task<IActionResult> Create([FromForm] string title, [FromForm] string content, IFormFile? photo)
         {
             var article = new Article
             {
@@ -44,6 +44,43 @@ namespace Insightly.Controllers
 
                 article.AuthorId = currentUser.Id;
                 article.CreatedAt = DateTime.Now;
+
+                // Handle optional photo upload
+                if (photo != null && photo.Length > 0)
+                {
+                    // Basic validation: limit size to 5 MB and allow common image types
+                    long maxBytes = 5 * 1024 * 1024;
+                    if (photo.Length > maxBytes)
+                    {
+                        ModelState.AddModelError("photo", "Photo must be 5 MB or smaller.");
+                        return View(article);
+                    }
+
+                    var permitted = new[] { "image/jpeg", "image/png", "image/gif" };
+                    if (!permitted.Contains(photo.ContentType))
+                    {
+                        ModelState.AddModelError("photo", "Only JPG, PNG, or GIF images are allowed.");
+                        return View(article);
+                    }
+
+                    var uploadsRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "articles");
+                    if (!Directory.Exists(uploadsRoot))
+                    {
+                        Directory.CreateDirectory(uploadsRoot);
+                    }
+
+                    var fileExtension = Path.GetExtension(photo.FileName);
+                    var safeFileName = $"article_{Guid.NewGuid():N}{fileExtension}";
+                    var filePath = Path.Combine(uploadsRoot, safeFileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await photo.CopyToAsync(stream);
+                    }
+
+                    // Store a web-accessible relative path for rendering
+                    article.ImagePath = $"/uploads/articles/{safeFileName}";
+                }
 
                 _context.Add(article);
                 await _context.SaveChangesAsync();
