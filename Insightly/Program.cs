@@ -1,4 +1,5 @@
 using Insightly.Models;
+using Insightly.Repositories;
 using Insightly.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
@@ -22,6 +23,15 @@ builder.Services.AddRazorPages();
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IVerificationCodeService, VerificationCodeService>();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
+
+// Register repository services
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IArticleRepository, ArticleRepository>();
+builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+builder.Services.AddScoped<IVoteRepository, VoteRepository>();
+builder.Services.AddScoped<ICommentVoteRepository, CommentVoteRepository>();
+builder.Services.AddScoped<IFollowRepository, FollowRepository>();
+builder.Services.AddScoped<IArticleReadRepository, ArticleReadRepository>();
 
 // Configure SMTP settings
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));

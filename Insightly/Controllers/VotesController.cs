@@ -1,20 +1,20 @@
 ﻿using Insightly.Models;
+using Insightly.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Insightly.Controllers
 {
     [Authorize]
     public class VotesController : Controller
     {
-        private readonly AppDbContext _context;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public VotesController(AppDbContext context, UserManager<ApplicationUser> userManager)
+        public VotesController(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
         {
-            _context = context;
+            _unitOfWork = unitOfWork;
             _userManager = userManager;
         }
 
@@ -27,20 +27,19 @@ namespace Insightly.Controllers
             if (user == null) return Unauthorized();
 
             bool removed = false;
-            var existingVote = await _context.Votes
-                .FirstOrDefaultAsync(v => v.ArticleId == articleId && v.UserId == user.Id);
+            var existingVote = await _unitOfWork.Votes.GetByUserAndArticleAsync(user.Id, articleId);
 
             if (existingVote != null)
             {
                 if (existingVote.IsUpvote == isUpvote)
                 {
-                    _context.Votes.Remove(existingVote);
+                    await _unitOfWork.Votes.DeleteByUserAndArticleAsync(user.Id, articleId);
                     removed = true;
                 }
                 else
                 {
                     existingVote.IsUpvote = isUpvote;
-                    _context.Update(existingVote);
+                    await _unitOfWork.Votes.UpdateAsync(existingVote);
                 }
             }
             else
@@ -51,10 +50,8 @@ namespace Insightly.Controllers
                     UserId = user.Id,
                     IsUpvote = isUpvote
                 };
-                _context.Votes.Add(vote);
+                await _unitOfWork.Votes.AddAsync(vote);
             }
-
-            await _context.SaveChangesAsync();
 
             var isAjax = string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
 
@@ -70,10 +67,7 @@ namespace Insightly.Controllers
         [HttpGet]
         public async Task<IActionResult> Count(int articleId)
         {
-            var netScore = await _context.Votes
-                .Where(v => v.ArticleId == articleId)
-                .SumAsync(v => v.IsUpvote ? 1 : -1);
-
+            var netScore = await _unitOfWork.Votes.GetNetScoreAsync(articleId);
             return Ok(new { netScore });
         }
 
@@ -83,9 +77,7 @@ namespace Insightly.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
 
-            var vote = await _context.Votes
-                .AsNoTracking()
-                .FirstOrDefaultAsync(v => v.ArticleId == articleId && v.UserId == user.Id);
+            var vote = await _unitOfWork.Votes.GetByUserAndArticleAsync(user.Id, articleId);
 
             if (vote == null) return Ok(new { voted = false });
             return Ok(new { voted = true, isUpvote = vote.IsUpvote });
@@ -99,20 +91,19 @@ namespace Insightly.Controllers
             if (user == null) return Unauthorized();
 
             bool removed = false;
-            var existingVote = await _context.CommentVotes
-                .FirstOrDefaultAsync(v => v.CommentId == commentId && v.UserId == user.Id);
+            var existingVote = await _unitOfWork.CommentVotes.GetByUserAndCommentAsync(user.Id, commentId);
 
             if (existingVote != null)
             {
                 if (existingVote.IsUpvote == isUpvote)
                 {
-                    _context.CommentVotes.Remove(existingVote);
+                    await _unitOfWork.CommentVotes.DeleteByUserAndCommentAsync(user.Id, commentId);
                     removed = true;
                 }
                 else
                 {
                     existingVote.IsUpvote = isUpvote;
-                    _context.CommentVotes.Update(existingVote);
+                    await _unitOfWork.CommentVotes.UpdateAsync(existingVote);
                 }
             }
             else
@@ -123,10 +114,8 @@ namespace Insightly.Controllers
                     UserId = user.Id,
                     IsUpvote = isUpvote
                 };
-                _context.CommentVotes.Add(vote);
+                await _unitOfWork.CommentVotes.AddAsync(vote);
             }
-
-            await _context.SaveChangesAsync();
 
             var isAjax = string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
 
@@ -141,10 +130,7 @@ namespace Insightly.Controllers
         [HttpGet]
         public async Task<IActionResult> CommentCount(int commentId)
         {
-            var netScore = await _context.CommentVotes
-                .Where(v => v.CommentId == commentId)
-                .SumAsync(v => v.IsUpvote ? 1 : -1);
-
+            var netScore = await _unitOfWork.CommentVotes.GetNetScoreAsync(commentId);
             return Ok(new { netScore });
         }
 
@@ -154,9 +140,7 @@ namespace Insightly.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
 
-            var vote = await _context.CommentVotes
-                .AsNoTracking()
-                .FirstOrDefaultAsync(v => v.CommentId == commentId && v.UserId == user.Id);
+            var vote = await _unitOfWork.CommentVotes.GetByUserAndCommentAsync(user.Id, commentId);
 
             if (vote == null) return Ok(new { voted = false });
             return Ok(new { voted = true, isUpvote = vote.IsUpvote });
@@ -164,7 +148,7 @@ namespace Insightly.Controllers
 
         private async Task<int> GetArticleIdFromComment(int commentId)
         {
-            var comment = await _context.Comments.FindAsync(commentId);
+            var comment = await _unitOfWork.Comments.GetByIdAsync(commentId);
             return comment?.ArticleId ?? 0;
         }
     }

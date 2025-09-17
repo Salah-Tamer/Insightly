@@ -1,8 +1,8 @@
 using Insightly.Models;
+using Insightly.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace Insightly.Controllers
@@ -11,12 +11,12 @@ namespace Insightly.Controllers
     public class ProfileController : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly AppDbContext _context;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public ProfileController(UserManager<ApplicationUser> userManager, AppDbContext context)
+        public ProfileController(UserManager<ApplicationUser> userManager, IUnitOfWork unitOfWork)
         {
             _userManager = userManager;
-            _context = context;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<IActionResult> Index()
@@ -34,12 +34,9 @@ namespace Insightly.Controllers
             }
 
             // Get user's articles
-            var articles = await _context.Articles
-                .Where(a => a.AuthorId == userId)
-                .OrderByDescending(a => a.CreatedAt)
-                .ToListAsync();
-            var followersCount = await _context.Follows.CountAsync(f => f.FollowingId == user.Id);
-            var followingCount = await _context.Follows.CountAsync(f => f.FollowerId == user.Id);
+            var articles = await _unitOfWork.Articles.GetByAuthorIdAsync(userId);
+            var followersCount = await _unitOfWork.Follows.GetFollowersCountAsync(user.Id);
+            var followingCount = await _unitOfWork.Follows.GetFollowingCountAsync(user.Id);
 
             ViewBag.Articles = articles;
             ViewBag.FollowersCount = followersCount;
@@ -168,21 +165,16 @@ namespace Insightly.Controllers
                 return NotFound();
             }
 
-            var articles = await _context.Articles
-                .Where(a => a.AuthorId == id)
-                .OrderByDescending(a => a.CreatedAt)
-                .ToListAsync();
-
-            var followersCount = await _context.Follows.CountAsync(f => f.FollowingId == id);
-            var followingCount = await _context.Follows.CountAsync(f => f.FollowerId == id);
+            var articles = await _unitOfWork.Articles.GetByAuthorIdAsync(id);
+            var followersCount = await _unitOfWork.Follows.GetFollowersCountAsync(id);
+            var followingCount = await _unitOfWork.Follows.GetFollowingCountAsync(id);
 
             var currentUser = await _userManager.GetUserAsync(User);
             var isFollowing = false;
 
             if (currentUser != null)
             {
-                isFollowing = await _context.Follows
-                    .AnyAsync(f => f.FollowerId == currentUser.Id && f.FollowingId == id);
+                isFollowing = await _unitOfWork.Follows.ExistsAsync(currentUser.Id, id);
             }
 
             ViewBag.Articles = articles;

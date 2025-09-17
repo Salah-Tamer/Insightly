@@ -1,20 +1,20 @@
 ﻿using Insightly.Models;
+using Insightly.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Insightly.Controllers
 {
     [Authorize]
     public class FollowController : Controller
     {
-        private readonly AppDbContext _context;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public FollowController(AppDbContext context, UserManager<ApplicationUser> userManager)
+        public FollowController(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
         {
-            _context = context;
+            _unitOfWork = unitOfWork;
             _userManager = userManager;
         }
 
@@ -30,8 +30,7 @@ namespace Insightly.Controllers
                 return RedirectToAction("ViewProfile", "Profile", new { id = userId });
             }
 
-            var alreadyFollowing = await _context.Follows
-                .AnyAsync(f => f.FollowerId == currentUser.Id && f.FollowingId == userId);
+            var alreadyFollowing = await _unitOfWork.Follows.ExistsAsync(currentUser.Id, userId);
 
             if (!alreadyFollowing)
             {
@@ -41,8 +40,7 @@ namespace Insightly.Controllers
                     FollowingId = userId
                 };
 
-                _context.Follows.Add(follow);
-                await _context.SaveChangesAsync();
+                await _unitOfWork.Follows.AddAsync(follow);
             }
 
             return RedirectToAction("ViewProfile", "Profile", new { id = userId });
@@ -54,14 +52,7 @@ namespace Insightly.Controllers
             var currentUser = await _userManager.GetUserAsync(User);
             if (currentUser == null) return Unauthorized();
 
-            var follow = await _context.Follows
-                .FirstOrDefaultAsync(f => f.FollowerId == currentUser.Id && f.FollowingId == userId);
-
-            if (follow != null)
-            {
-                _context.Follows.Remove(follow);
-                await _context.SaveChangesAsync();
-            }
+            await _unitOfWork.Follows.DeleteByFollowerAndFollowingAsync(currentUser.Id, userId);
 
             return RedirectToAction("ViewProfile", "Profile", new { id = userId });
         }

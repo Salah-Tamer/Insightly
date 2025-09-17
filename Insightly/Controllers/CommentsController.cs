@@ -1,19 +1,19 @@
 ﻿using Insightly.Models;
+using Insightly.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Insightly.Controllers
 {
     public class CommentsController : Controller
     {
-        private readonly AppDbContext _context;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public CommentsController(AppDbContext context, UserManager<ApplicationUser> userManager)
+        public CommentsController(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
         {
-            _context = context;
+            _unitOfWork = unitOfWork;
             _userManager = userManager;
         }
 
@@ -43,8 +43,7 @@ namespace Insightly.Controllers
                 UpdatedAt = null
             };
 
-            _context.Comments.Add(comment);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.Comments.AddAsync(comment);
 
             var isAjax = string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
 
@@ -71,31 +70,27 @@ namespace Insightly.Controllers
         [HttpGet]
         public async Task<IActionResult> List(int articleId)
         {
-            var comments = await _context.Comments
-                .Where(c => c.ArticleId == articleId)
-                .Include(c => c.Author)
-                .OrderByDescending(c => c.CreatedAt)
-                .Select(c => new
-                {
-                    id = c.CommentId,
-                    content = c.Content,
-                    author = c.Author.Name,
-                    authorId = c.AuthorId,
-                    authorProfilePicture = c.Author.ProfilePicture,
-                    createdAt = c.CreatedAt.ToString("dd MMM yyyy HH:mm"),
-                    updatedAt = c.UpdatedAt.HasValue ? c.UpdatedAt.Value.ToString("dd MMM yyyy HH:mm") : (string?)null,
-                    isUpdated = c.UpdatedAt.HasValue
-                })
-                .ToListAsync();
+            var comments = await _unitOfWork.Comments.GetByArticleIdAsync(articleId);
+            var result = comments.Select(c => new
+            {
+                id = c.CommentId,
+                content = c.Content,
+                author = c.Author.Name,
+                authorId = c.AuthorId,
+                authorProfilePicture = c.Author.ProfilePicture,
+                createdAt = c.CreatedAt.ToString("dd MMM yyyy HH:mm"),
+                updatedAt = c.UpdatedAt.HasValue ? c.UpdatedAt.Value.ToString("dd MMM yyyy HH:mm") : (string?)null,
+                isUpdated = c.UpdatedAt.HasValue
+            });
 
-            return Json(comments);
+            return Json(result);
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
         public async Task<IActionResult> Delete(int commentId)
         {
-            var comment = await _context.Comments.Include(c => c.Author).FirstOrDefaultAsync(c => c.CommentId == commentId);
+            var comment = await _unitOfWork.Comments.GetByIdWithAuthorAsync(commentId);
             if (comment == null)
             {
                 return NotFound(new { message = "Comment not found" });
@@ -115,8 +110,7 @@ namespace Insightly.Controllers
             }
 
             int articleId = comment.ArticleId;
-            _context.Comments.Remove(comment);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.Comments.DeleteAsync(commentId);
 
             var isAjax = string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
 
@@ -139,7 +133,7 @@ namespace Insightly.Controllers
                 return BadRequest(new { message = "Comment cannot be empty" });
             }
 
-            var comment = await _context.Comments.Include(c => c.Author).FirstOrDefaultAsync(c => c.CommentId == commentId);
+            var comment = await _unitOfWork.Comments.GetByIdWithAuthorAsync(commentId);
             if (comment == null)
             {
                 return NotFound(new { message = "Comment not found" });
@@ -158,7 +152,7 @@ namespace Insightly.Controllers
 
             comment.Content = content;
             comment.UpdatedAt = DateTime.Now;
-            await _context.SaveChangesAsync();
+            await _unitOfWork.Comments.UpdateAsync(comment);
 
             var isAjax = string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
 

@@ -1,55 +1,39 @@
 using Insightly.Models;
+using Insightly.Repositories;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Insightly.Controllers
 {
     public class SearchController : Controller
     {
-        private readonly AppDbContext _context;
+        private readonly IArticleRepository _articleRepository;
 
-        public SearchController(AppDbContext context)
+        public SearchController(IArticleRepository articleRepository)
         {
-            _context = context;
+            _articleRepository = articleRepository;
         }
 
 
         [HttpGet]
         public async Task<IActionResult> SearchAjax(string query)
         {
-            var articlesQuery = _context.Articles
-                .Include(a => a.Author)
-                .AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(query))
-            {
-                var searchTerm = query.Trim().ToLower();
-                articlesQuery = articlesQuery.Where(a => 
-                    a.Title.ToLower().Contains(searchTerm) ||
-                    a.Content.ToLower().Contains(searchTerm) ||
-                    a.Author.Name.ToLower().Contains(searchTerm)
-                );
-            }
-
-            var articles = await articlesQuery
-                .OrderByDescending(a => a.CreatedAt)
-                .Select(a => new {
-                    articleId = a.ArticleId,
-                    title = a.Title,
-                    content = a.Content,
-                    createdAt = a.CreatedAt,
-                    author = new {
-                        name = a.Author.Name,
-                        id = a.AuthorId
-                    }
-                })
-                .ToListAsync();
+            var articles = await _articleRepository.SearchAsync(query);
+            var result = articles.Select(a => new {
+                articleId = a.ArticleId,
+                title = a.Title,
+                content = a.Content,
+                createdAt = a.CreatedAt,
+                author = new {
+                    name = a.Author.Name,
+                    id = a.AuthorId
+                }
+            }).ToList();
 
             return Json(new { 
-                articles = articles,
+                articles = result,
                 query = query,
                 hasQuery = !string.IsNullOrWhiteSpace(query),
-                count = articles.Count
+                count = result.Count
             });
         }
     }

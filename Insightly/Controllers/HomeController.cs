@@ -1,6 +1,6 @@
 using Insightly.Models;
+using Insightly.Repositories;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 
 namespace Insightly.Controllers
@@ -8,45 +8,34 @@ namespace Insightly.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
-        private readonly AppDbContext _context;
+        private readonly IArticleRepository _articleRepository;
 
-        public HomeController(ILogger<HomeController> logger, AppDbContext context)
+        public HomeController(ILogger<HomeController> logger, IArticleRepository articleRepository)
         {
             _logger = logger;
-            _context = context;
+            _articleRepository = articleRepository;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-           
-            var articles = _context.Articles
-                                   .Include(a => a.Author)
-                                   .OrderByDescending(a => a.CreatedAt)
-                                   .Take(3)
-                                   .ToList();
-
+            var articles = await _articleRepository.GetLatestAsync(3);
             return View(articles);
         }
 
         [HttpGet]
         public async Task<IActionResult> LoadMoreArticles(int skip = 3, int take = 3)
         {
-            var articles = await _context.Articles
-                                        .Include(a => a.Author)
-                                        .OrderByDescending(a => a.CreatedAt)
-                                        .Skip(skip)
-                                        .Take(take)
-                                        .Select(a => new
-                                        {
-                                            ArticleId = a.ArticleId,
-                                            Title = a.Title,
-                                            Content = a.Content,
-                                            CreatedAt = a.CreatedAt,
-                                            Author = new { Name = a.Author.Name }
-                                        })
-                                        .ToListAsync();
+            var articles = await _articleRepository.GetLatestAsync(skip, take);
+            var result = articles.Select(a => new
+            {
+                ArticleId = a.ArticleId,
+                Title = a.Title,
+                Content = a.Content,
+                CreatedAt = a.CreatedAt,
+                Author = new { Name = a.Author.Name }
+            });
 
-            return Json(articles);
+            return Json(result);
         }
 
         public IActionResult Privacy()

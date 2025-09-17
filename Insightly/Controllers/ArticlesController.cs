@@ -1,19 +1,19 @@
 ﻿using Insightly.Models;
+using Insightly.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Insightly.Controllers
 {
     public class ArticlesController : Controller
     {
-        private readonly AppDbContext _context;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public ArticlesController(AppDbContext context, UserManager<ApplicationUser> userManager)
+        public ArticlesController(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
         {
-            _context = context;
+            _unitOfWork = unitOfWork;
             _userManager = userManager;
         }
 
@@ -82,8 +82,7 @@ namespace Insightly.Controllers
                     article.ImagePath = $"/uploads/articles/{safeFileName}";
                 }
 
-                _context.Add(article);
-                await _context.SaveChangesAsync();
+                await _unitOfWork.Articles.AddAsync(article);
 
                 TempData["SuccessMessage"] = "Article created successfully!";
                 return RedirectToAction("Index", "Home");
@@ -93,29 +92,23 @@ namespace Insightly.Controllers
         }
         public async Task<IActionResult> Details(int id)
         {
-            var article = await _context.Articles
-                .Include(a => a.Author)
-                .Include(a => a.Comments)
-                .ThenInclude(c => c.Author)
-                .FirstOrDefaultAsync(a => a.ArticleId == id);
+            var article = await _unitOfWork.Articles.GetByIdWithAuthorAndCommentsAsync(id);
 
             if (article == null)
             {
                 return NotFound();
             }
 
-            var netScore = await _context.Votes
-                .Where(v => v.ArticleId == id)
-                .SumAsync(v => v.IsUpvote ? 1 : -1);
+            var netScore = await _unitOfWork.Votes.GetNetScoreAsync(id);
+            var commentsCount = await _unitOfWork.Comments.GetCountByArticleAsync(id);
 
             ViewBag.NetScore = netScore;
-            ViewBag.CommentsCount = article.Comments.Count;
+            ViewBag.CommentsCount = commentsCount;
 
             var currentUser = await _userManager.GetUserAsync(User);
             if (currentUser != null)
             {
-                var isRead = await _context.ArticleReads
-                    .AnyAsync(ar => ar.ArticleId == id && ar.UserId == currentUser.Id);
+                var isRead = await _unitOfWork.ArticleReads.ExistsAsync(currentUser.Id, id);
                 ViewBag.IsRead = isRead;
             }
             else
@@ -128,7 +121,7 @@ namespace Insightly.Controllers
         [Authorize]
         public async Task<IActionResult> Edit(int id)
         {
-            var article = await _context.Articles.FindAsync(id);
+            var article = await _unitOfWork.Articles.GetByIdAsync(id);
             if (article == null)
             {
                 return NotFound();
@@ -154,7 +147,7 @@ namespace Insightly.Controllers
         {
             if (id != article.ArticleId) return NotFound();
 
-            var existingArticle = await _context.Articles.FindAsync(id);
+            var existingArticle = await _unitOfWork.Articles.GetByIdAsync(id);
             if (existingArticle == null) return NotFound();
 
             var user = await _userManager.GetUserAsync(User);
@@ -181,13 +174,12 @@ namespace Insightly.Controllers
                     existingArticle.Content = article.Content;
                     existingArticle.UpdatedAt = DateTime.Now;
 
-                    _context.Update(existingArticle);
-                    await _context.SaveChangesAsync();
+                    await _unitOfWork.Articles.UpdateAsync(existingArticle);
 
                     TempData["SuccessMessage"] = "Article updated successfully!";
                     return RedirectToAction(nameof(Details), new { id = article.ArticleId });
                 }
-                catch (DbUpdateConcurrencyException)
+                catch (Exception)
                 {
                     return NotFound();
                 }
@@ -197,9 +189,7 @@ namespace Insightly.Controllers
         [Authorize]
         public async Task<IActionResult> Delete(int id)
         {
-            var article = await _context.Articles
-                .Include(a => a.Author)
-                .FirstOrDefaultAsync(a => a.ArticleId == id);
+            var article = await _unitOfWork.Articles.GetByIdWithAuthorAsync(id);
 
             if (article == null) return NotFound();
 
@@ -223,7 +213,7 @@ namespace Insightly.Controllers
         [Authorize]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var article = await _context.Articles.FindAsync(id);
+            var article = await _unitOfWork.Articles.GetByIdAsync(id);
             if (article == null) return NotFound();
 
             var user = await _userManager.GetUserAsync(User);
@@ -238,8 +228,7 @@ namespace Insightly.Controllers
                 return Forbid();
             }
 
-            _context.Articles.Remove(article);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.Articles.DeleteAsync(id);
 
             TempData["SuccessMessage"] = "Article deleted successfully!";
             return RedirectToAction("Index", "Home");
@@ -256,14 +245,13 @@ namespace Insightly.Controllers
                 return Unauthorized();
             }
 
-            var article = await _context.Articles.FindAsync(id);
+            var article = await _unitOfWork.Articles.GetByIdAsync(id);
             if (article == null)
             {
                 return NotFound();
             }
 
-            var existingRead = await _context.ArticleReads
-                .FirstOrDefaultAsync(ar => ar.ArticleId == id && ar.UserId == currentUser.Id);
+            var existingRead = await _unitOfWork.ArticleReads.GetByUserAndArticleAsync(currentUser.Id, id);
 
             if (existingRead == null)
             {
@@ -274,8 +262,7 @@ namespace Insightly.Controllers
                     ReadAt = DateTime.Now
                 };
 
-                _context.ArticleReads.Add(articleRead);
-                await _context.SaveChangesAsync();
+                await _unitOfWork.ArticleReads.AddAsync(articleRead);
             }
 
             var isAjax = string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
@@ -298,19 +285,14 @@ namespace Insightly.Controllers
                 return Unauthorized();
             }
 
-            var readArticles = await _context.ArticleReads
-                .Include(ar => ar.Article)
-                .ThenInclude(a => a.Author)
-                .Where(ar => ar.UserId == currentUser.Id)
-                .OrderByDescending(ar => ar.ReadAt)
-                .Select(ar => new
-                {
-                    Article = ar.Article,
-                    ReadAt = ar.ReadAt
-                })
-                .ToListAsync();
+            var readArticles = await _unitOfWork.ArticleReads.GetByUserIdAsync(currentUser.Id);
+            var result = readArticles.Select(ar => new
+            {
+                Article = ar.Article,
+                ReadAt = ar.ReadAt
+            });
 
-            return View(readArticles);
+            return View(result);
         }
 
         [Authorize]
@@ -322,12 +304,7 @@ namespace Insightly.Controllers
                 return Unauthorized();
             }
 
-            var myArticles = await _context.Articles
-                .Include(a => a.Author)
-                .Where(a => a.AuthorId == currentUser.Id)
-                .OrderByDescending(a => a.CreatedAt)
-                .ToListAsync();
-
+            var myArticles = await _unitOfWork.Articles.GetByAuthorIdAsync(currentUser.Id);
             return View(myArticles);
         }
     }
