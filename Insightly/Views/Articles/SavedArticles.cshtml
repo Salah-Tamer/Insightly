@@ -44,8 +44,14 @@
                             }
                             @preview
                         </p>
-                        <div class="d-flex align-items-center justify-content-end">
+                        <div class="d-flex align-items-center justify-content-end gap-2">
                             <a href="/Articles/Details/@article.ArticleId" class="btn btn-sm btn-outline-primary read-more-btn">Read more</a>
+                            <form asp-controller="Articles" asp-action="Save" asp-route-id="@article.ArticleId" method="post" class="d-inline unsave-form">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove from saved articles">
+                                    <i class="bi bi-bookmark-fill"></i>
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -157,6 +163,51 @@ document.addEventListener('DOMContentLoaded', () => {
       const up = btn.closest('.post-card')?.querySelector('.upvote');
       if (up) up.classList.remove('active-up');
       sendVote(id, false);
+    });
+  });
+
+  // Unsave functionality
+  document.querySelectorAll('.unsave-form').forEach(form => {
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const formData = new FormData(this);
+      const articleCard = this.closest('.article-item');
+      
+      try {
+        const response = await fetch(this.action, {
+          method: 'POST',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: formData
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          
+          if (!result.isSaved) {
+            // Remove the article card from the DOM
+            articleCard.remove();
+            
+            // Check if there are any articles left
+            const remainingArticles = document.querySelectorAll('.article-item');
+            if (remainingArticles.length === 0) {
+              // Show the "no articles" message
+              const container = document.getElementById('readArticlesContainer');
+              const noResultsMessage = document.getElementById('noResultsMessage');
+              if (container && noResultsMessage) {
+                container.style.display = 'none';
+                noResultsMessage.style.display = 'block';
+              }
+            }
+          }
+        } else if (response.status === 401) {
+          window.location.href = '/Identity/Account/Login';
+        }
+      } catch (error) {
+        console.error('Error unsaving article:', error);
+      }
     });
   });
 });

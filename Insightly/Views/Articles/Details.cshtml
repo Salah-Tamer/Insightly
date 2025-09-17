@@ -94,9 +94,9 @@
                 <button class="action-btn pill" id="btn-share" type="button" aria-label="Share" style="background-color: #e9ecef; border-color: #dee2e6; color: #000000 !important;"><i class="bi bi-share" style="color: #000000 !important;"></i><span class="d-none d-sm-inline ms-1" style="color: #000000 !important;">Share</span></button>
                 @if (User.Identity != null && User.Identity.IsAuthenticated)
                 {
-                    <form asp-controller="Articles" asp-action="Save" asp-route-id="@Model.ArticleId" method="post" class="d-inline">
+                    <form asp-controller="Articles" asp-action="Save" asp-route-id="@Model.ArticleId" method="post" class="d-inline" id="save-form">
                         @Html.AntiForgeryToken()
-                        <button type="submit" class="action-btn pill btn-icon @(ViewBag.IsRead == true ? "is-on" : "")" title="Save article" @(ViewBag.IsRead == true ? "disabled" : "") style="background-color: #e9ecef; border-color: #dee2e6; color: #000000 !important;">
+                        <button type="submit" class="action-btn pill btn-icon @(ViewBag.IsRead == true ? "is-on" : "")" title="@(ViewBag.IsRead == true ? "Unsave article" : "Save article")" style="background-color: #e9ecef; border-color: #dee2e6; color: #000000 !important;">
                             <i class="bi @(ViewBag.IsRead == true ? "bi-bookmark-fill" : "bi-bookmark")" style="color: #000000 !important;"></i>
                             <span class="d-none d-sm-inline ms-1" style="color: #000000 !important;">Save</span>
                         </button>
@@ -548,6 +548,53 @@
                 if ((composerInput.value || '').trim().length > 0) { expandComposer(); }
             });
             if (composerInput) composerInput.addEventListener('blur', function () { setTimeout(collapseComposer, 100); });
+
+            // Save/Unsave functionality
+            const saveForm = document.getElementById('save-form');
+            if (saveForm) {
+                saveForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const formData = new FormData(this);
+                    const button = this.querySelector('button[type="submit"]');
+                    const icon = button.querySelector('i');
+                    
+                    try {
+                        const response = await fetch(this.action, {
+                            method: 'POST',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: formData
+                        });
+                        
+                        if (response.ok) {
+                            const result = await response.json();
+                            
+                            // Toggle icon only
+                            if (result.isSaved) {
+                                button.classList.add('is-on');
+                                button.title = 'Unsave article';
+                                icon.className = 'bi bi-bookmark-fill';
+                            } else {
+                                button.classList.remove('is-on');
+                                button.title = 'Save article';
+                                icon.className = 'bi bi-bookmark';
+                            }
+                            
+                            // Show success message
+                            if (result.message) {
+                                // You could add a toast notification here
+                                console.log(result.message);
+                            }
+                        } else if (response.status === 401) {
+                            window.location.href = '/Identity/Account/Login';
+                        }
+                    } catch (error) {
+                        console.error('Error saving/unsaving article:', error);
+                    }
+                });
+            }
         });
     </script>
 }

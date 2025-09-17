@@ -252,6 +252,8 @@ namespace Insightly.Controllers
             }
 
             var existingRead = await _unitOfWork.ArticleReads.GetByUserAndArticleAsync(currentUser.Id, id);
+            bool isSaved = false;
+            string message = "";
 
             if (existingRead == null)
             {
@@ -263,17 +265,25 @@ namespace Insightly.Controllers
                 };
 
                 await _unitOfWork.ArticleReads.AddAsync(articleRead);
+                isSaved = true;
+                message = "Article saved!";
+            }
+            else
+            {
+                await _unitOfWork.ArticleReads.DeleteByUserAndArticleAsync(currentUser.Id, id);
+                isSaved = false;
+                message = "Article unsaved!";
             }
 
             var isAjax = string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
 
             if (!isAjax)
             {
-                TempData["SuccessMessage"] = "Article saved!";
+                TempData["SuccessMessage"] = message;
                 return RedirectToAction(nameof(Details), new { id });
             }
 
-            return Json(new { success = true, message = "Article saved!" });
+            return Json(new { success = true, message = message, isSaved = isSaved });
         }
 
         [Authorize]
