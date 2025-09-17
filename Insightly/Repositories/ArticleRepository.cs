@@ -57,6 +57,16 @@ namespace Insightly.Repositories
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<Article>> GetByFollowingUsersAsync(string userId)
+        {
+            return await _context.Articles
+                .Include(a => a.Author)
+                .Where(a => _context.Follows
+                    .Any(f => f.FollowerId == userId && f.FollowingId == a.AuthorId))
+                .OrderByDescending(a => a.CreatedAt)
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<Article>> GetLatestAsync(int count)
         {
             return await _context.Articles

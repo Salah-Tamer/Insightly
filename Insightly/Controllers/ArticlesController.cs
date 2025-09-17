@@ -307,5 +307,18 @@ namespace Insightly.Controllers
             var myArticles = await _unitOfWork.Articles.GetByAuthorIdAsync(currentUser.Id);
             return View(myArticles);
         }
+
+        [Authorize]
+        public async Task<IActionResult> FollowingArticles()
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                return Unauthorized();
+            }
+
+            var followingArticles = await _unitOfWork.Articles.GetByFollowingUsersAsync(currentUser.Id);
+            return View(followingArticles);
+        }
     }
 }

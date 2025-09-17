@@ -1,0 +1,121 @@
+@model List<Article>
+@{
+    ViewData["Title"] = "Following Articles";
+}
+
+<div class="home-page container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="fw-bold">Following Articles</h1>
+        <a asp-action="Index" asp-controller="Home" class="btn btn-outline-secondary">← Back to Home</a>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="d-flex flex-column gap-3" id="articlesContainer">
+            @foreach (var article in Model)
+            {
+                <div class="post-card d-flex article-item clickable-card"
+                     data-title="@article.Title.ToLower()"
+                     data-content="@article.Content.ToLower()"
+                     data-author="@article.Author.Name.ToLower()"
+                     data-article-url="/Articles/Details/@article.ArticleId">
+                    <div class="vote-col d-flex flex-column align-items-center justify-content-start py-2">
+                        <button class="btn btn-link p-0 vote-btn upvote" data-article-id="@article.ArticleId" aria-label="Upvote">
+                            <i class="bi bi-arrow-up-circle fs-4"></i>
+                        </button>
+                        <div class="score my-1" id="score-@article.ArticleId">0</div>
+                        <button class="btn btn-link p-0 vote-btn downvote" data-article-id="@article.ArticleId" aria-label="Downvote">
+                            <i class="bi bi-arrow-down-circle fs-4"></i>
+                        </button>
+                    </div>
+                    <div class="flex-grow-1 p-3">
+                        <div class="d-flex align-items-center gap-2 mb-1 text-muted small">
+                            <span>Posted by <a href="/Profile/ViewProfile/@article.Author.Id" class="text-decoration-none fw-medium" style="color: #ff4b37 !important;">@article.Author.Name</a></span>
+                            <span>•</span>
+                            <span>@article.CreatedAt.ToString("dd MMM h:mm tt")</span>
+                        </div>
+                        <h5 class="mb-2"><a class="text-decoration-none" href="/Articles/Details/@article.ArticleId">@article.Title</a></h5>
+                        <p class="mb-3 text-muted">
+                            @{
+                                var content = article.Content ?? string.Empty;
+                                var preview = content.Length > 180 ? content.Substring(0, 180) + "..." : content;
+                            }
+                            @preview
+                        </p>
+                        <div class="d-flex align-items-center justify-content-end">
+                            <a href="/Articles/Details/@article.ArticleId" class="btn btn-sm btn-outline-primary read-more-btn">Read more</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5" id="noResultsMessage">
+            <i class="bi bi-people display-1 text-muted mb-3"></i>
+            <h4>No articles from people you follow</h4>
+            <p class="text-muted">Start following people to see their articles here, or check out the latest articles on the home page.</p>
+            <div class="d-flex gap-2 justify-content-center">
+                <a asp-action="Index" asp-controller="Home" class="btn btn-primary">Go to Home</a>
+                <a asp-action="Index" asp-controller="Profile" class="btn btn-outline-secondary">Find People to Follow</a>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('[id^="score-"]').forEach(async el => {
+    const id = el.id.replace('score-', '');
+    try {
+      const res = await fetch(`/Votes/Count?articleId=${id}`);
+      if (res.ok) {
+        const json = await res.json();
+        el.textContent = (json && typeof json.netScore !== 'undefined') ? json.netScore : 0;
+      }
+    } catch (e) {}
+  });
+
+  async function sendVote(articleId, isUpvote) {
+    try {
+      const res = await fetch('/Votes/Vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ articleId: parseInt(articleId), isUpvote: Boolean(isUpvote) })
+      });
+      if (res.ok) {
+        const c = await fetch(`/Votes/Count?articleId=${articleId}`);
+        if (c.ok) {
+          const json = await c.json();
+          const s = document.getElementById(`score-${articleId}`);
+          if (s) s.textContent = (json && typeof json.netScore !== 'undefined') ? json.netScore : 0;
+        }
+      } else if (res.status === 401) {
+        window.location.href = '/Identity/Account/Login';
+      }
+    } catch (e) {}
+  }
+
+  document.querySelectorAll('.upvote').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-article-id');
+      btn.classList.add('active-up');
+      const down = btn.closest('.post-card')?.querySelector('.downvote');
+      if (down) down.classList.remove('active-down');
+      sendVote(id, true);
+    });
+  });
+  document.querySelectorAll('.downvote').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-article-id');
+      btn.classList.add('active-down');
+      const up = btn.closest('.post-card')?.querySelector('.upvote');
+      if (up) up.classList.remove('active-up');
+      sendVote(id, false);
+    });
+  });
+});
+</script>
+}
