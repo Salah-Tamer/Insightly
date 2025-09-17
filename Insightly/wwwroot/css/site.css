@@ -108,8 +108,12 @@ body { background-color: var(--bg); }
 
 /* Home page theming */
 .home-page .vote-col .vote-btn .bi { color: #6c757d; transition: color .15s ease; }
-.home-page .vote-col .vote-btn.upvote:hover .bi, .home-page .vote-col .vote-btn.upvote.active-up .bi { color: #212529; }
-.home-page .vote-col .vote-btn.downvote:hover .bi, .home-page .vote-col .vote-btn.downvote.active-down .bi { color: #212529; }
+.home-page .vote-col .vote-btn.upvote:hover .bi, .home-page .vote-col .vote-btn.upvote.active-up .bi { color: var(--primary); }
+.home-page .vote-col .vote-btn.downvote:hover .bi, .home-page .vote-col .vote-btn.downvote.active-down .bi { color: #7193ff; }
+
+/* Make vote highlighting more visible for all pages */
+.vote-btn.active-up .bi { color: var(--primary) !important; }
+.vote-btn.active-down .bi { color: #7193ff !important; }
 .home-page .score { color: #343a40; }
 .home-page .chip { background: #f1f3f5; color: #343a40; border-color: #e9ecef; }
 .home-page .read-article-card { border-color: #e9ecef; }

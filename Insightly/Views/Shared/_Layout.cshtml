@@ -267,6 +267,9 @@
                     
                     // Fetch vote counts for new articles
                     fetchVoteCounts(data.articles);
+                    
+                    // Fetch user vote status for new articles
+                    fetchUserVoteStatus(data.articles);
                 } else {
                     // Show no results message
                     articlesContainer.innerHTML = '';
@@ -356,6 +359,42 @@
                         }
                     } catch (e) {
                         // Silently handle vote count fetch errors
+                    }
+                });
+            }
+
+            // Function to fetch user vote status for articles
+            async function fetchUserVoteStatus(articles) {
+                articles.forEach(async article => {
+                    try {
+                        const res = await fetch(`/Votes/UserArticleVote?articleId=${article.articleId}`, {
+                            method: 'GET',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+                        if (res.ok) {
+                            const json = await res.json();
+                            if (json.voted) {
+                                const upvoteBtn = document.querySelector(`.upvote[data-article-id="${article.articleId}"]`);
+                                const downvoteBtn = document.querySelector(`.downvote[data-article-id="${article.articleId}"]`);
+                                if (json.isUpvote) {
+                                    if (upvoteBtn) upvoteBtn.classList.add('active-up');
+                                    if (downvoteBtn) downvoteBtn.classList.remove('active-down');
+                                } else {
+                                    if (downvoteBtn) downvoteBtn.classList.add('active-down');
+                                    if (upvoteBtn) upvoteBtn.classList.remove('active-up');
+                                }
+                            } else {
+                                // Remove any existing active classes if user hasn't voted
+                                const upvoteBtn = document.querySelector(`.upvote[data-article-id="${article.articleId}"]`);
+                                const downvoteBtn = document.querySelector(`.downvote[data-article-id="${article.articleId}"]`);
+                                if (upvoteBtn) upvoteBtn.classList.remove('active-up');
+                                if (downvoteBtn) downvoteBtn.classList.remove('active-down');
+                            }
+                        }
+                    } catch (e) {
+                        // Silently handle errors
                     }
                 });
             }
@@ -460,9 +499,12 @@
             // Vote function (for home page)
             async function sendVote(articleId, isUpvote) {
                 try {
-                    const res = await fetch('/Votes/Vote', {
+                    const res = await fetch('/Votes/AjaxVote', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
                         body: JSON.stringify({ articleId: parseInt(articleId), isUpvote: Boolean(isUpvote) })
                     });
                     if (res.ok) {

@@ -84,6 +84,54 @@ namespace Insightly.Controllers
         }
 
         [HttpPost]
+        public async Task<IActionResult> AjaxVote([FromBody] AjaxVoteRequest request)
+        {
+            if (request == null)
+            {
+                return BadRequest("Invalid request data");
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            // Validate that the article exists
+            var article = await _unitOfWork.Articles.GetByIdAsync(request.ArticleId);
+            if (article == null)
+            {
+                return BadRequest("Article not found");
+            }
+
+            bool removed = false;
+            var existingVote = await _unitOfWork.Votes.GetByUserAndArticleAsync(user.Id, request.ArticleId);
+
+            if (existingVote != null)
+            {
+                if (existingVote.IsUpvote == request.IsUpvote)
+                {
+                    await _unitOfWork.Votes.DeleteByUserAndArticleAsync(user.Id, request.ArticleId);
+                    removed = true;
+                }
+                else
+                {
+                    existingVote.IsUpvote = request.IsUpvote;
+                    await _unitOfWork.Votes.UpdateAsync(existingVote);
+                }
+            }
+            else
+            {
+                var vote = new Vote
+                {
+                    ArticleId = request.ArticleId,
+                    UserId = user.Id,
+                    IsUpvote = request.IsUpvote
+                };
+                await _unitOfWork.Votes.AddAsync(vote);
+            }
+
+            return Ok(new { message = removed ? "Vote removed!" : "Vote saved!", removed });
+        }
+
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CommentVote(int commentId, bool isUpvote)
         {

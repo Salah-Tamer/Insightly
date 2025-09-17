@@ -78,11 +78,55 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {}
   });
 
+  // Fetch user vote status for each article (avoid duplicates)
+  const processedArticles = new Set();
+  document.querySelectorAll('.vote-btn').forEach(async btn => {
+    const articleId = btn.getAttribute('data-article-id');
+    if (articleId && !processedArticles.has(articleId)) {
+      processedArticles.add(articleId);
+      try {
+        const res = await fetch(`/Votes/UserArticleVote?articleId=${articleId}`, {
+          method: 'GET',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.voted) {
+            const upvoteBtn = document.querySelector(`.upvote[data-article-id="${articleId}"]`);
+            const downvoteBtn = document.querySelector(`.downvote[data-article-id="${articleId}"]`);
+            if (json.isUpvote) {
+              if (upvoteBtn) upvoteBtn.classList.add('active-up');
+              if (downvoteBtn) downvoteBtn.classList.remove('active-down');
+            } else {
+              if (downvoteBtn) downvoteBtn.classList.add('active-down');
+              if (upvoteBtn) upvoteBtn.classList.remove('active-up');
+            }
+          } else {
+            // Remove any existing active classes if user hasn't voted
+            const upvoteBtn = document.querySelector(`.upvote[data-article-id="${articleId}"]`);
+            const downvoteBtn = document.querySelector(`.downvote[data-article-id="${articleId}"]`);
+            if (upvoteBtn) upvoteBtn.classList.remove('active-up');
+            if (downvoteBtn) downvoteBtn.classList.remove('active-down');
+          }
+        } else if (res.status === 401) {
+          console.log('User not authenticated for vote status check');
+        }
+      } catch (e) {
+        console.log('Error fetching vote status for article', articleId, e);
+      }
+    }
+  });
+
   async function sendVote(articleId, isUpvote) {
     try {
-      const res = await fetch('/Votes/Vote', {
+      const res = await fetch('/Votes/AjaxVote', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
         body: JSON.stringify({ articleId: parseInt(articleId), isUpvote: Boolean(isUpvote) })
       });
       if (res.ok) {

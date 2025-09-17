@@ -88,11 +88,63 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {}
   });
 
+  // Fetch user vote status for each article (avoid duplicates)
+  const processedArticles = new Set();
+  document.querySelectorAll('.vote-btn').forEach(async btn => {
+    const articleId = btn.getAttribute('data-article-id');
+    if (articleId && !processedArticles.has(articleId)) {
+      processedArticles.add(articleId);
+      try {
+        const res = await fetch(`/Votes/UserArticleVote?articleId=${articleId}`, {
+          method: 'GET',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+        if (res.ok) {
+          const json = await res.json();
+          console.log(`Vote status for article ${articleId}:`, json);
+          if (json.voted) {
+            const upvoteBtn = document.querySelector(`.upvote[data-article-id="${articleId}"]`);
+            const downvoteBtn = document.querySelector(`.downvote[data-article-id="${articleId}"]`);
+            console.log(`Found buttons for article ${articleId}:`, { upvoteBtn, downvoteBtn });
+            if (json.isUpvote) {
+              if (upvoteBtn) {
+                upvoteBtn.classList.add('active-up');
+                console.log(`Added active-up class to upvote button for article ${articleId}`);
+              }
+              if (downvoteBtn) downvoteBtn.classList.remove('active-down');
+            } else {
+              if (downvoteBtn) {
+                downvoteBtn.classList.add('active-down');
+                console.log(`Added active-down class to downvote button for article ${articleId}`);
+              }
+              if (upvoteBtn) upvoteBtn.classList.remove('active-up');
+            }
+          } else {
+            // Remove any existing active classes if user hasn't voted
+            const upvoteBtn = document.querySelector(`.upvote[data-article-id="${articleId}"]`);
+            const downvoteBtn = document.querySelector(`.downvote[data-article-id="${articleId}"]`);
+            if (upvoteBtn) upvoteBtn.classList.remove('active-up');
+            if (downvoteBtn) downvoteBtn.classList.remove('active-down');
+          }
+        } else {
+          console.log(`Failed to fetch vote status for article ${articleId}, status:`, res.status);
+        }
+      } catch (e) {
+        console.log(`Error fetching vote status for article ${articleId}:`, e);
+      }
+    }
+  });
+
   async function sendVote(articleId, isUpvote) {
     try {
-      const res = await fetch('/Votes/Vote', {
+      const res = await fetch('/Votes/AjaxVote', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
         body: JSON.stringify({ articleId: parseInt(articleId), isUpvote: Boolean(isUpvote) })
       });
       if (res.ok) {
@@ -109,20 +161,48 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   document.querySelectorAll('.upvote').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       const id = btn.getAttribute('data-article-id');
-      btn.classList.add('active-up');
+      console.log('Upvote clicked for article:', id);
+      
+      // Toggle visual state immediately
       const down = btn.closest('.post-card')?.querySelector('.downvote');
-      if (down) down.classList.remove('active-down');
+      if (btn.classList.contains('active-up')) {
+        // If already upvoted, remove the vote
+        btn.classList.remove('active-up');
+        console.log('Removed upvote for article:', id);
+      } else {
+        // Add upvote, remove downvote
+        btn.classList.add('active-up');
+        if (down) down.classList.remove('active-down');
+        console.log('Added upvote for article:', id);
+      }
+      
       sendVote(id, true);
     });
   });
   document.querySelectorAll('.downvote').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       const id = btn.getAttribute('data-article-id');
-      btn.classList.add('active-down');
+      console.log('Downvote clicked for article:', id);
+      
+      // Toggle visual state immediately
       const up = btn.closest('.post-card')?.querySelector('.upvote');
-      if (up) up.classList.remove('active-up');
+      if (btn.classList.contains('active-down')) {
+        // If already downvoted, remove the vote
+        btn.classList.remove('active-down');
+        console.log('Removed downvote for article:', id);
+      } else {
+        // Add downvote, remove upvote
+        btn.classList.add('active-down');
+        if (up) up.classList.remove('active-up');
+        console.log('Added downvote for article:', id);
+      }
+      
       sendVote(id, false);
     });
   });
@@ -162,6 +242,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Fetch scores for new articles
         fetchScoresForNewArticles(articles);
+        
+        // Fetch user vote status for new articles
+        fetchUserVoteStatusForNewArticles(articles);
         
         // Show button again if we got a full batch (might be more articles)
         if (articles.length === take) {
@@ -263,6 +346,41 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
       } catch (e) {}
+    });
+  }
+
+  function fetchUserVoteStatusForNewArticles(articles) {
+    articles.forEach(async article => {
+      try {
+        const res = await fetch(`/Votes/UserArticleVote?articleId=${article.articleId}`, {
+          method: 'GET',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.voted) {
+            const upvoteBtn = document.querySelector(`.upvote[data-article-id="${article.articleId}"]`);
+            const downvoteBtn = document.querySelector(`.downvote[data-article-id="${article.articleId}"]`);
+            if (json.isUpvote) {
+              if (upvoteBtn) upvoteBtn.classList.add('active-up');
+              if (downvoteBtn) downvoteBtn.classList.remove('active-down');
+            } else {
+              if (downvoteBtn) downvoteBtn.classList.add('active-down');
+              if (upvoteBtn) upvoteBtn.classList.remove('active-up');
+            }
+          } else {
+            // Remove any existing active classes if user hasn't voted
+            const upvoteBtn = document.querySelector(`.upvote[data-article-id="${article.articleId}"]`);
+            const downvoteBtn = document.querySelector(`.downvote[data-article-id="${article.articleId}"]`);
+            if (upvoteBtn) upvoteBtn.classList.remove('active-up');
+            if (downvoteBtn) downvoteBtn.classList.remove('active-down');
+          }
+        }
+      } catch (e) {
+        // Silently handle errors
+      }
     });
   }
   
