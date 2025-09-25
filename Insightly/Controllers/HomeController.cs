@@ -38,10 +38,7 @@ namespace Insightly.Controllers
             return Json(result);
         }
 
-        public IActionResult Privacy()
-        {
-            return View();
-        }
+        // Removed unused Privacy action
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
