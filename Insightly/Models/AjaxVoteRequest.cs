@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.SignalR;
+
 namespace Insightly.Models
 {
     public class AjaxVoteRequest

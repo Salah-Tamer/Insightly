@@ -12,6 +12,7 @@ namespace Insightly.Models
         public DbSet<Vote> Votes { get; set; }
         public DbSet<CommentVote> CommentVotes { get; set; }
         public DbSet<Follow> Follows { get; set; }
+        public DbSet<ChatMessage> ChatMessages { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

@@ -10,6 +10,7 @@ namespace Insightly.Repositories
         ICommentVoteRepository CommentVotes { get; }
         IFollowRepository Follows { get; }
         IArticleReadRepository ArticleReads { get; }
+        IChatRepository Chats { get; }
         
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();

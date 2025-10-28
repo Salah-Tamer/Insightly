@@ -17,6 +17,7 @@ namespace Insightly.Repositories
             CommentVotes = new CommentVoteRepository(_context);
             Follows = new FollowRepository(_context);
             ArticleReads = new ArticleReadRepository(_context);
+            Chats = new ChatRepository(_context);
         }
 
         public IArticleRepository Articles { get; }
@@ -25,6 +26,7 @@ namespace Insightly.Repositories
         public ICommentVoteRepository CommentVotes { get; }
         public IFollowRepository Follows { get; }
         public IArticleReadRepository ArticleReads { get; }
+        public IChatRepository Chats { get; }
 
         public async Task<int> SaveChangesAsync()
         {

@@ -23,6 +23,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IVerificationCodeService, VerificationCodeService>();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
+builder.Services.AddSignalR();
 
 // Register repository services
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -71,6 +72,7 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+app.MapHub<ChatHub>("/chatHub");
 
 app.MapRazorPages();
 
