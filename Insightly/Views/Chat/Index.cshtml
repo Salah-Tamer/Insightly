@@ -1,22 +1,205 @@
-﻿@{
-    ViewData["Title"] = "Chat";
+﻿@model IEnumerable<Insightly.Models.Chat>
+@{
+    ViewData["Title"] = "Messages";
+    var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 }
 
 <style>
     body {
         background: #f8f9fa;
+        overflow: hidden;
     }
 
-    .chat-container {
-        max-width: 900px;
-        margin: 40px auto;
+    .chat-page-wrapper {
+        height: calc(100vh - 140px);
+        margin: 20px auto;
+        max-width: 1400px;
+        display: flex;
+        gap: 0;
         background: white;
         border-radius: 8px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.08);
         overflow: hidden;
-        height: calc(100vh - 180px);
+    }
+
+    /* Sidebar Styles */
+    .chat-sidebar {
+        width: 360px;
+        border-right: 1px solid #e9ecef;
         display: flex;
         flex-direction: column;
+        background: white;
+    }
+
+    .sidebar-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .sidebar-header h2 {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .sidebar-tabs {
+        display: flex;
+        border-bottom: 1px solid #e9ecef;
+        background: white;
+    }
+
+    .sidebar-tab {
+        flex: 1;
+        padding: 14px 20px;
+        text-align: center;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        color: #95a5a6;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s ease;
+    }
+
+    .sidebar-tab:hover {
+        color: #2c3e50;
+        background: #f8f9fa;
+    }
+
+    .sidebar-tab.active {
+        color: #ff4444;
+        border-bottom-color: #ff4444;
+    }
+
+    .search-box {
+        padding: 16px 24px;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .search-box input {
+        width: 100%;
+        padding: 10px 16px;
+        border: 1px solid #dfe6e9;
+        border-radius: 6px;
+        font-size: 14px;
+        background: #f8f9fa;
+        transition: all 0.2s ease;
+    }
+
+    .search-box input:focus {
+        outline: none;
+        border-color: #ff4444;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(255, 68, 68, 0.1);
+    }
+
+    .chat-list {
+        flex: 1;
+        overflow-y: auto;
+        min-height: 0;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .chat-list-item, .user-list-item {
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        transition: background 0.2s ease;
+        border-bottom: 1px solid #f1f3f5;
+    }
+
+    .chat-list-item:hover, .user-list-item:hover {
+        background: #f8f9fa;
+    }
+
+    .chat-list-item.active, .user-list-item.active {
+        background: #fff5f4;
+        border-left: 3px solid #ff4444;
+    }
+
+    .chat-list-item .avatar, .user-list-item .avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: #3498db;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 18px;
+        flex-shrink: 0;
+    }
+
+    .chat-list-item.active .avatar, .user-list-item.active .avatar {
+        background: #ff4444;
+    }
+
+    .chat-info, .user-info-item {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .chat-name, .user-name {
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 15px;
+        margin-bottom: 4px;
+    }
+
+    .chat-preview, .user-email {
+        font-size: 13px;
+        color: #95a5a6;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .chat-meta {
+        text-align: right;
+        flex-shrink: 0;
+    }
+
+    .chat-time {
+        font-size: 12px;
+        color: #b2bec3;
+        margin-bottom: 4px;
+    }
+
+    .unread-badge {
+        background: #ff4444;
+        color: white;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 10px;
+        display: inline-block;
+    }
+
+    .follow-badge {
+        font-size: 11px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        background: #e8f5e9;
+        color: #2e7d32;
+        font-weight: 500;
+    }
+
+    /* Chat Area Styles */
+    .chat-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
     }
 
     .chat-header {
@@ -27,6 +210,7 @@
         align-items: center;
         gap: 14px;
         border-bottom: 1px solid #e9ecef;
+        flex-shrink: 0;
     }
 
     .chat-header .avatar {
@@ -224,293 +408,399 @@
         font-size: 15px;
     }
 
-    /* Scrollbar styling */
+    /* Scrollbar */
+    .chat-list::-webkit-scrollbar,
     .messages-container::-webkit-scrollbar {
         width: 6px;
     }
 
+    .chat-list::-webkit-scrollbar-track,
     .messages-container::-webkit-scrollbar-track {
         background: transparent;
     }
 
+    .chat-list::-webkit-scrollbar-thumb,
     .messages-container::-webkit-scrollbar-thumb {
         background: #dfe6e9;
         border-radius: 3px;
     }
 
+    .chat-list::-webkit-scrollbar-thumb:hover,
     .messages-container::-webkit-scrollbar-thumb:hover {
         background: #b2bec3;
     }
 
-    /* Receiver ID Input Page */
-    .receiver-input-container {
-        max-width: 480px;
-        margin: 80px auto;
-        text-align: center;
-        padding: 48px 40px;
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    }
-
-    .receiver-input-container i {
-        font-size: 52px;
-        color: #ff4444;
-        margin-bottom: 20px;
-    }
-
-    .receiver-input-container h2 {
-        margin-bottom: 10px;
-        color: #2c3e50;
-        font-size: 24px;
-        font-weight: 600;
-    }
-
-    .receiver-input-container p {
-        color: #95a5a6;
-        margin-bottom: 32px;
-        font-size: 15px;
-    }
-
-    .receiver-input-container input {
-        width: 100%;
-        padding: 14px 18px;
-        border: 1px solid #dfe6e9;
-        border-radius: 6px;
-        font-size: 15px;
-        margin-bottom: 16px;
-        transition: all 0.2s ease;
-        background: #f8f9fa;
-    }
-
-    .receiver-input-container input:focus {
-        outline: none;
-        border-color: #ff4444;
-        background: white;
-        box-shadow: 0 0 0 3px rgba(255, 68, 68, 0.1);
-    }
-
-    .receiver-input-container button {
-        width: 100%;
-        padding: 14px;
-        background: #ff4444;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        font-size: 15px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .receiver-input-container button:hover {
-        background: #e63939;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(255, 68, 68, 0.25);
-    }
-
-    .receiver-input-container button:active {
-        transform: translateY(0);
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .chat-sidebar {
+            width: 100%;
+        }
+        .chat-main {
+            display: none;
+        }
+        .chat-main.active {
+            display: flex;
+        }
     }
 </style>
 
-@if (ViewBag.ReceiverId == null)
-{
-    <div class="receiver-input-container">
-        <i class="bi bi-chat-dots"></i>
-        <h2>Start a Conversation</h2>
-        <p>Enter the user ID of the person you want to chat with</p>
-        <input type="text" id="receiverIdInput" placeholder="Enter User ID" />
-        <button id="goBtn">
-            <i class="bi bi-arrow-right me-2"></i>Start Chat
-        </button>
-    </div>
-    <script>
-        document.getElementById("goBtn").addEventListener("click", () => {
-            const receiverId = document.getElementById("receiverIdInput").value.trim();
-            if (receiverId) {
-                window.location.href = `/Chat?receiverId=${receiverId}`;
-            }
-        });
-        
-        document.getElementById("receiverIdInput").addEventListener("keypress", (e) => {
-            if (e.key === "Enter") {
-                document.getElementById("goBtn").click();
-            }
-        });
-    </script>
-}
-else
-{
-    <div class="chat-container">
-        <div class="chat-header">
-            <div class="avatar">
-                @(ViewBag.ReceiverName?.ToString().Substring(0, 1).ToUpper() ?? "U")
+<div class="chat-page-wrapper">
+    <!-- Sidebar -->
+    <div class="chat-sidebar">
+        <div class="sidebar-header">
+            <h2>Messages</h2>
+        </div>
+
+        <div class="sidebar-tabs">
+            <div class="sidebar-tab active" data-tab="chats">
+                <i class="bi bi-chat-dots me-1"></i> Chats
             </div>
+            <div class="sidebar-tab" data-tab="followers">
+                <i class="bi bi-people me-1"></i> Followers
+            </div>
+            <div class="sidebar-tab" data-tab="following">
+                <i class="bi bi-person-check me-1"></i> Following
+            </div>
+        </div>
+        
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search..." />
+        </div>
+
+        <div class="chat-list">
+            <!-- Chats Tab Content -->
+            <div class="tab-content active" id="chatsContent">
+                @if (Model != null && Model.Any())
+                {
+                    @foreach (var chat in Model)
+                    {
+                        var otherUser = chat.UserId == currentUserId ? chat.OtherUser : chat.User;
+                        var lastMessage = chat.Messages?.OrderByDescending(m => m.SentAt).FirstOrDefault();
+                        var unreadCount = chat.Messages?.Count(m => !m.IsRead && m.SenderId != currentUserId) ?? 0;
+
+                        <div class="chat-list-item" data-user-id="@otherUser.Id" data-user-name="@otherUser.UserName" data-type="chat">
+                            <div class="avatar">@otherUser.UserName.Substring(0, 1).ToUpper()</div>
+                            <div class="chat-info">
+                                <div class="chat-name">@otherUser.UserName</div>
+                                <div class="chat-preview">
+                                    @if (lastMessage != null)
+                                    {
+                                        @(lastMessage.Message.Length > 40 ? lastMessage.Message.Substring(0, 40) + "..." : lastMessage.Message)
+                                    }
+                                    else
+                                    {
+                                        <text>No messages yet</text>
+                                    }
+                                </div>
+                            </div>
+                            <div class="chat-meta">
+                                @if (lastMessage != null)
+                                {
+                                    <div class="chat-time">@GetTimeAgo(lastMessage.SentAt)</div>
+                                }
+                                @if (unreadCount > 0)
+                                {
+                                    <span class="unread-badge">@unreadCount</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <i class="bi bi-chat-text"></i>
+                        <p>No conversations yet</p>
+                    </div>
+                }
+            </div>
+
+            <!-- Followers Tab Content -->
+            <div class="tab-content" id="followersContent">
+                @{
+                    var followers = ViewBag.Followers as IEnumerable<Insightly.Models.Follow>;
+                    if (followers != null && followers.Any())
+                    {
+                        @foreach (var follow in followers)
+                        {
+                            var follower = follow.Follower;
+                            <div class="user-list-item" data-user-id="@follower.Id" data-user-name="@follower.UserName" data-type="user">
+                                <div class="avatar">@follower.UserName.Substring(0, 1).ToUpper()</div>
+                                <div class="user-info-item">
+                                    <div class="user-name">@follower.UserName</div>
+                                    <div class="user-email">@(follower.Email ?? "Follower")</div>
+                                </div>
+                                <span class="follow-badge">Follower</span>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <i class="bi bi-people"></i>
+                            <p>No followers yet</p>
+                        </div>
+                    }
+                }
+            </div>
+
+            <!-- Following Tab Content -->
+            <div class="tab-content" id="followingContent">
+                @{
+                    var following = ViewBag.Following as IEnumerable<Insightly.Models.Follow>;
+                    if (following != null && following.Any())
+                    {
+                        @foreach (var follow in following)
+                        {
+                            var followedUser = follow.Following;
+                            <div class="user-list-item" data-user-id="@followedUser.Id" data-user-name="@followedUser.UserName" data-type="user">
+                                <div class="avatar">@followedUser.UserName.Substring(0, 1).ToUpper()</div>
+                                <div class="user-info-item">
+                                    <div class="user-name">@followedUser.UserName</div>
+                                    <div class="user-email">@(followedUser.Email ?? "Following")</div>
+                                </div>
+                                <span class="follow-badge" style="background: #e3f2fd; color: #1565c0;">Following</span>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <i class="bi bi-person-check"></i>
+                            <p>Not following anyone yet</p>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Area -->
+    <div class="chat-main" id="chatMain">
+        <div class="chat-header" id="chatHeader" style="display: none;">
+            <div class="avatar" id="headerAvatar"></div>
             <div class="user-info">
-                <h3>@ViewBag.ReceiverName</h3>
+                <h3 id="headerName"></h3>
                 <p><span class="online-dot"></span>Online</p>
             </div>
         </div>
 
         <div class="messages-container" id="messagesContainer">
-            <div class="empty-state" id="emptyState">
+            <div class="empty-state">
                 <i class="bi bi-chat-text"></i>
-                <p>No messages yet. Start the conversation!</p>
+                <p>Select a conversation to start messaging</p>
             </div>
         </div>
 
-        <div class="chat-input-container">
+        <div class="chat-input-container" id="chatInput" style="display: none;">
             <input type="text" id="messageInput" placeholder="Type a message..." />
             <button class="send-button" id="sendBtn">
                 <i class="bi bi-send-fill"></i>
             </button>
         </div>
     </div>
+</div>
 
-    @section Scripts {
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
-        <script>
-            const receiverId = "@ViewBag.ReceiverId";
-            const currentUserId = "@ViewBag.CurrentUserId";
-            const receiverName = "@ViewBag.ReceiverName";
-            const messagesContainer = document.getElementById("messagesContainer");
-            const emptyState = document.getElementById("emptyState");
-            
-            const connection = new signalR.HubConnectionBuilder()
-                .withUrl("/chatHub")
-                .build();
-
-            function scrollToBottom() {
-                requestAnimationFrame(() => {
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                });
-            }
-
-            function getInitials(name) {
-                return name ? name.substring(0, 1).toUpperCase() : 'U';
-            }
-
-            function formatTime(date) {
-                const now = new Date();
-                const messageDate = new Date(date);
-                const diff = now - messageDate;
-                const minutes = Math.floor(diff / 60000);
-                
-                if (minutes < 1) return 'Just now';
-                if (minutes < 60) return `${minutes}m ago`;
-                
-                const hours = Math.floor(minutes / 60);
-                if (hours < 24) return `${hours}h ago`;
-                
-                return messageDate.toLocaleDateString();
-            }
-
-            function addMessage(senderId, message, timestamp = new Date()) {
-                if (emptyState.style.display !== 'none') {
-                    emptyState.style.display = 'none';
-                }
-
-                const messageDiv = document.createElement('div');
-                const isSent = senderId === currentUserId;
-                messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
-                
-                const avatarInitial = isSent ? '@(User.Identity.Name?.Substring(0, 1).ToUpper() ?? "Y")' : getInitials(receiverName);
-                
-                messageDiv.innerHTML = `
-                    <div class="avatar-small">${avatarInitial}</div>
-                    <div class="message-content">
-                        <div class="message-bubble">
-                            ${escapeHtml(message)}
-                        </div>
-                        <div class="message-time">
-                            ${formatTime(timestamp)}
-                        </div>
-                    </div>
-                `;
-                
-                messagesContainer.appendChild(messageDiv);
-                scrollToBottom();
-            }
-
-            function escapeHtml(text) {
-                const div = document.createElement('div');
-                div.textContent = text;
-                return div.innerHTML;
-            }
-
-            connection.on("ReceiveMessage", (sender, message) => {
-                addMessage(sender, message);
-            });
-
-            connection.on("LoadChatHistory", (messages) => {
-                messagesContainer.innerHTML = "";
-                
-                if (messages && messages.length > 0) {
-                    messages.forEach(msg => {
-                        const messageDiv = document.createElement('div');
-                        const isSent = msg.senderId === currentUserId;
-                        messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
-                        
-                        const avatarInitial = isSent ? '@(User.Identity.Name?.Substring(0, 1).ToUpper() ?? "Y")' : getInitials(receiverName);
-                        
-                        messageDiv.innerHTML = `
-                            <div class="avatar-small">${avatarInitial}</div>
-                            <div class="message-content">
-                                <div class="message-bubble">
-                                    ${escapeHtml(msg.message)}
-                                </div>
-                                <div class="message-time">
-                                    ${formatTime(msg.sentAt || new Date())}
-                                </div>
-                            </div>
-                        `;
-                        
-                        messagesContainer.appendChild(messageDiv);
-                    });
-                    scrollToBottom();
-                } else {
-                    const emptyStateDiv = document.createElement('div');
-                    emptyStateDiv.className = 'empty-state';
-                    emptyStateDiv.id = 'emptyState';
-                    emptyStateDiv.innerHTML = `
-                        <i class="bi bi-chat-text"></i>
-                        <p>No messages yet. Start the conversation!</p>
-                    `;
-                    messagesContainer.appendChild(emptyStateDiv);
-                }
-            });
-
-            connection.start().then(async () => {
-                console.log("Connected to chat");
-                await connection.invoke("LoadChatMessages", receiverId);
-            }).catch(err => console.error("Connection error:", err));
-
-            function sendMessage() {
-                const input = document.getElementById("messageInput");
-                const message = input.value.trim();
-                
-                if (message) {
-                    connection.invoke("SendPrivateMessage", receiverId, message)
-                        .catch(err => console.error("Send error:", err));
-                    input.value = "";
-                }
-            }
-
-            document.getElementById("sendBtn").addEventListener("click", sendMessage);
-            
-            document.getElementById("messageInput").addEventListener("keypress", (e) => {
-                if (e.key === "Enter") {
-                    e.preventDefault();
-                    sendMessage();
-                }
-            });
-
-            window.addEventListener('resize', () => {
-                if (messagesContainer.children.length > 0) {
-                    scrollToBottom();
-                }
-            });
-        </script>
+@functions {
+    private string GetTimeAgo(DateTime dateTime)
+    {
+        var timeSpan = DateTime.UtcNow - dateTime;
+        
+        if (timeSpan.TotalMinutes < 1) return "Just now";
+        if (timeSpan.TotalMinutes < 60) return $"{(int)timeSpan.TotalMinutes}m ago";
+        if (timeSpan.TotalHours < 24) return $"{(int)timeSpan.TotalHours}h ago";
+        if (timeSpan.TotalDays < 7) return $"{(int)timeSpan.TotalDays}d ago";
+        
+        return dateTime.ToString("MMM dd");
     }
+}
+
+@section Scripts {
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+<script>
+    let currentUserId = "@User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value";
+    let currentChatUserId = null;
+    let currentChatUserName = null;
+    const messagesContainer = document.getElementById("messagesContainer");
+    const messageInput = document.getElementById("messageInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const chatHeader = document.getElementById("chatHeader");
+    const chatInput = document.getElementById("chatInput");
+
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/chatHub")
+        .build();
+
+    // Tab switching
+    document.querySelectorAll('.sidebar-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            // Remove active from all tabs
+            document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            // Add active to clicked tab
+            this.classList.add('active');
+            const tabName = this.dataset.tab;
+            document.getElementById(tabName + 'Content').classList.add('active');
+            
+            // Clear search
+            document.getElementById('searchInput').value = '';
+        });
+    });
+
+    // Scroll to bottom
+    function scrollToBottom() {
+        requestAnimationFrame(() => {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        });
+    }
+
+    // Format time
+    function formatTime(date) {
+        const now = new Date();
+        const messageDate = new Date(date);
+        const diff = now - messageDate;
+        const minutes = Math.floor(diff / 60000);
+        
+        if (minutes < 1) return 'Just now';
+        if (minutes < 60) return `${minutes}m ago`;
+        
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        
+        return messageDate.toLocaleDateString();
+    }
+
+    // Escape HTML
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Add message to UI
+    function addMessage(senderId, message, timestamp = new Date()) {
+        const messageDiv = document.createElement('div');
+        const isSent = senderId === currentUserId;
+        messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
+        
+        const avatarInitial = isSent 
+            ? '@User.Identity.Name.Substring(0, 1).ToUpper()' 
+            : currentChatUserName.substring(0, 1).toUpperCase();
+        
+        messageDiv.innerHTML = `
+            <div class="avatar-small">${avatarInitial}</div>
+            <div class="message-content">
+                <div class="message-bubble">
+                    ${escapeHtml(message)}
+                </div>
+                <div class="message-time">
+                    ${formatTime(timestamp)}
+                </div>
+            </div>
+        `;
+        
+        messagesContainer.appendChild(messageDiv);
+        scrollToBottom();
+    }
+
+    // Load chat
+    async function loadChat(userId, userName, element) {
+        currentChatUserId = userId;
+        currentChatUserName = userName;
+
+        // Update active state
+        document.querySelectorAll('.chat-list-item, .user-list-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        element.classList.add('active');
+
+        // Update header
+        document.getElementById('headerAvatar').textContent = userName.substring(0, 1).toUpperCase();
+        document.getElementById('headerName').textContent = userName;
+        chatHeader.style.display = 'flex';
+        chatInput.style.display = 'flex';
+
+        // Clear messages
+        messagesContainer.innerHTML = '';
+
+        // Load messages
+        await connection.invoke("LoadChatMessages", userId);
+    }
+
+    // Send message
+    function sendMessage() {
+        const message = messageInput.value.trim();
+        
+        if (message && currentChatUserId) {
+            connection.invoke("SendPrivateMessage", currentChatUserId, message)
+                .catch(err => console.error("Send error:", err));
+            messageInput.value = "";
+        }
+    }
+
+    // SignalR events
+    connection.on("ReceiveMessage", (sender, message) => {
+        if (sender === currentChatUserId || sender === currentUserId) {
+            addMessage(sender, message);
+        }
+    });
+
+    connection.on("LoadChatHistory", (messages) => {
+        messagesContainer.innerHTML = "";
+        
+        if (messages && messages.length > 0) {
+            messages.forEach(msg => {
+                addMessage(msg.senderId, msg.message, msg.sentAt || new Date());
+            });
+        } else {
+            messagesContainer.innerHTML = `
+                <div class="empty-state">
+                    <i class="bi bi-chat-text"></i>
+                    <p>No messages yet. Start the conversation!</p>
+                </div>
+            `;
+        }
+    });
+
+    // Event listeners for chat and user items
+    document.querySelectorAll('.chat-list-item, .user-list-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const userId = this.dataset.userId;
+            const userName = this.dataset.userName;
+            loadChat(userId, userName, this);
+        });
+    });
+
+    sendBtn.addEventListener('click', sendMessage);
+
+    messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const activeTab = document.querySelector('.tab-content.active');
+        
+        activeTab.querySelectorAll('.chat-list-item, .user-list-item').forEach(item => {
+            const name = item.dataset.userName.toLowerCase();
+            item.style.display = name.includes(searchTerm) ? 'flex' : 'none';
+        });
+    });
+
+    // Start connection
+    connection.start()
+        .then(() => console.log("Connected to chat hub"))
+        .catch(err => console.error("Connection error:", err));
+
+    window.addEventListener('resize', () => {
+        if (messagesContainer.children.length > 0) {
+            scrollToBottom();
+        }
+    });
+</script>
 }

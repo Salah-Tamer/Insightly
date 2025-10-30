@@ -12,7 +12,9 @@ namespace Insightly.Models
         public DbSet<Vote> Votes { get; set; }
         public DbSet<CommentVote> CommentVotes { get; set; }
         public DbSet<Follow> Follows { get; set; }
+        public DbSet<Chat> Chats { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -43,7 +45,7 @@ namespace Insightly.Models
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
-           
+
             modelBuilder.Entity<Comment>(entity =>
             {
                 entity.HasKey(c => c.CommentId);
@@ -138,6 +140,22 @@ namespace Insightly.Models
                 entity.HasIndex(f => new { f.FollowerId, f.FollowingId })
                     .IsUnique()
                     .HasDatabaseName("IX_Follows_FollowerId_FollowingId");
+            });
+            //Chat
+            modelBuilder.Entity<Chat>(entity =>
+            {
+                entity.HasOne(c => c.User)
+                    .WithMany(u => u.Chats)
+                    .HasForeignKey(c => c.UserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasOne(c => c.OtherUser)
+                    .WithMany(u => u.OtherChats)
+                    .HasForeignKey(c => c.OtherUserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasIndex(c => new { c.UserId, c.OtherUserId })
+                    .IsUnique();
             });
 
 

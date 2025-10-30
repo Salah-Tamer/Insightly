@@ -1,13 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-using Insightly.Repositories; 
+using Insightly.Repositories;
 using Microsoft.AspNetCore.Identity;
-using Insightly.Models; 
+using Insightly.Models;
+using System.Linq;
 
 namespace Insightly.Controllers
 {
-    [Authorize] 
+    [Authorize]
     public class ChatController : Controller
     {
         private readonly IUnitOfWork _unitOfWork;
@@ -19,20 +20,22 @@ namespace Insightly.Controllers
             _userManager = userManager;
         }
 
-        
-        public async Task<IActionResult> Index(string? receiverId)
+        public async Task<IActionResult> Index()
         {
-            var currentUser = await _userManager.GetUserAsync(User);
+            var user = await _userManager.GetUserAsync(User);
 
-          
-           
-                var receiver = await _userManager.FindByIdAsync(receiverId);
-                ViewBag.ReceiverName = receiver?.UserName;
-                ViewBag.CurrentUserId = currentUser?.Id;
-                ViewBag.ReceiverId = receiverId;
+            
+            var chats = await _unitOfWork.Chats.GetChats(user.Id);
 
-                return View();
-           
+            
+            var followers = await _unitOfWork.Follows.GetFollowersAsync(user.Id);
+
+            var following = await _unitOfWork.Follows.GetFollowingAsync(user.Id);
+
+            ViewBag.Followers = followers;
+            ViewBag.Following = following;
+
+            return View(chats);
         }
     }
 }
