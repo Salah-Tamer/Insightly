@@ -248,6 +248,94 @@
         margin-right: 6px;
     }
 
+    .call-actions {
+        margin-left: auto;
+        display: flex;
+        gap: 10px;
+    }
+
+    .call-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: none;
+        background: #2ecc71;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .call-btn:hover {
+        transform: scale(1.1);
+    }
+
+    .call-btn.end-call {
+        background: #e74c3c;
+    }
+
+    .call-status {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        display: none;
+        z-index: 1000;
+        min-width: 300px;
+    }
+
+    .call-status.active {
+        display: block;
+    }
+
+    .call-status h4 {
+        margin: 0 0 15px 0;
+        color: #2c3e50;
+    }
+
+    .call-status .status-text {
+        color: #7f8c8d;
+        margin-bottom: 15px;
+    }
+
+    .call-controls {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+    }
+
+    .call-controls button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .accept-call {
+        background: #2ecc71;
+        color: white;
+    }
+
+    .decline-call {
+        background: #e74c3c;
+        color: white;
+    }
+
+    .accept-call:hover {
+        background: #27ae60;
+    }
+
+    .decline-call:hover {
+        background: #c0392b;
+    }
+
     .messages-container {
         flex: 1;
         min-height: 0;
@@ -583,6 +671,14 @@
                 <h3 id="headerName"></h3>
                 <p><span class="online-dot"></span>Online</p>
             </div>
+            <div class="call-actions">
+                <button class="call-btn" id="voiceCallBtn" title="Voice Call">
+                    <i class="bi bi-telephone-fill"></i>
+                </button>
+                <button class="call-btn end-call" id="endCallBtn" style="display: none;" title="End Call">
+                    <i class="bi bi-telephone-x-fill"></i>
+                </button>
+            </div>
         </div>
 
         <div class="messages-container" id="messagesContainer">
@@ -600,6 +696,19 @@
         </div>
     </div>
 </div>
+
+<!-- Call Status Modal -->
+<div class="call-status" id="callStatus">
+    <h4 id="callTitle">Incoming Call</h4>
+    <div class="status-text" id="callStatusText">ahmedelgyar16@gmail.com is calling...</div>
+    <div class="call-controls" id="callControls">
+        <button class="accept-call" id="acceptCallBtn">Accept</button>
+        <button class="decline-call" id="declineCallBtn">Decline</button>
+    </div>
+</div>
+
+<!-- Hidden audio element for remote stream -->
+<audio id="remoteAudio" autoplay></audio>
 
 @functions {
     private string GetTimeAgo(DateTime dateTime)
@@ -627,8 +736,22 @@
     const chatHeader = document.getElementById("chatHeader");
     const chatInput = document.getElementById("chatInput");
 
+    // WebRTC variables
+    let peerConnection = null;
+    let localStream = null;
+    const configuration = {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' }
+        ]
+    };
+
     const connection = new signalR.HubConnectionBuilder()
         .withUrl("/chatHub")
+        .build();
+
+    const callConnection = new signalR.HubConnectionBuilder()
+        .withUrl("/callHub")
         .build();
 
     // Tab switching
@@ -825,6 +948,169 @@
             console.log("Current user ID:", currentUserId);
         })
         .catch(err => console.error("Connection error:", err));
+
+    callConnection.start()
+        .then(() => console.log("Connected to call hub"))
+        .catch(err => console.error("Call connection error:", err));
+
+    // ===== WEBRTC CALL FUNCTIONS =====
+
+    // Start a call
+    document.getElementById('voiceCallBtn').addEventListener('click', async () => {
+        if (!currentChatUserId) return;
+        
+        try {
+            await startCall(currentChatUserId);
+            showCallStatus('Calling...', false);
+        } catch (err) {
+            console.error('Error starting call:', err);
+            alert('Could not access microphone');
+        }
+    });
+
+    async function startCall(receiverId) {
+        // Get microphone access
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        // Create peer connection
+        peerConnection = new RTCPeerConnection(configuration);
+        
+        // Add local stream tracks
+        localStream.getTracks().forEach(track => {
+            peerConnection.addTrack(track, localStream);
+        });
+        
+        // Handle incoming tracks
+        peerConnection.ontrack = (event) => {
+            document.getElementById('remoteAudio').srcObject = event.streams[0];
+        };
+        
+        // Handle ICE candidates
+        peerConnection.onicecandidate = (event) => {
+            if (event.candidate) {
+                callConnection.invoke("SendIceCandidate", receiverId, JSON.stringify(event.candidate));
+            }
+        };
+        
+        // Create and send offer
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        await callConnection.invoke("SendOffer", receiverId, JSON.stringify(offer));
+        
+        document.getElementById('voiceCallBtn').style.display = 'none';
+        document.getElementById('endCallBtn').style.display = 'flex';
+    }
+
+    // Receive call offer
+    callConnection.on("ReceiveOffer", async (callerId, offer) => {
+        currentChatUserId = callerId;
+        showCallStatus('Incoming call...', true);
+        
+        // Store offer for when user accepts
+        window.pendingOffer = offer;
+        window.pendingCallerId = callerId;
+    });
+
+    // Accept call
+    document.getElementById('acceptCallBtn').addEventListener('click', async () => {
+        try {
+            const offer = JSON.parse(window.pendingOffer);
+            const callerId = window.pendingCallerId;
+            
+            // Get microphone access
+            localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            
+            // Create peer connection
+            peerConnection = new RTCPeerConnection(configuration);
+            
+            // Add local stream
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
+            });
+            
+            // Handle incoming tracks
+            peerConnection.ontrack = (event) => {
+                document.getElementById('remoteAudio').srcObject = event.streams[0];
+            };
+            
+            // Handle ICE candidates
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    callConnection.invoke("SendIceCandidate", callerId, JSON.stringify(event.candidate));
+                }
+            };
+            
+            // Set remote description and create answer
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            
+            // Send answer
+            await callConnection.invoke("SendAnswer", callerId, JSON.stringify(answer));
+            
+            showCallStatus('Connected', false);
+            document.getElementById('voiceCallBtn').style.display = 'none';
+            document.getElementById('endCallBtn').style.display = 'flex';
+        } catch (err) {
+            console.error('Error accepting call:', err);
+            alert('Could not accept call');
+        }
+    });
+
+    // Receive answer
+    callConnection.on("ReceiveAnswer", async (answerId, answer) => {
+        const answerDesc = JSON.parse(answer);
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(answerDesc));
+        showCallStatus('Connected', false);
+    });
+
+    // Receive ICE candidate
+    callConnection.on("ReceiveIceCandidate", async (senderId, candidate) => {
+        const iceCandidate = JSON.parse(candidate);
+        await peerConnection.addIceCandidate(new RTCIceCandidate(iceCandidate));
+    });
+
+    // Decline call
+    document.getElementById('declineCallBtn').addEventListener('click', () => {
+        hideCallStatus();
+    });
+
+    // End call
+    document.getElementById('endCallBtn').addEventListener('click', () => {
+        endCall();
+    });
+
+    function endCall() {
+        if (peerConnection) {
+            peerConnection.close();
+            peerConnection = null;
+        }
+        
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
+            localStream = null;
+        }
+        
+        document.getElementById('voiceCallBtn').style.display = 'flex';
+        document.getElementById('endCallBtn').style.display = 'none';
+        hideCallStatus();
+    }
+
+    function showCallStatus(text, showControls) {
+        const callStatus = document.getElementById('callStatus');
+        const callStatusText = document.getElementById('callStatusText');
+        const callControls = document.getElementById('callControls');
+        
+        callStatusText.textContent = text;
+        callControls.style.display = showControls ? 'flex' : 'none';
+        callStatus.classList.add('active');
+    }
+
+    function hideCallStatus() {
+        document.getElementById('callStatus').classList.remove('active');
+    }
+
+    // ===== END WEBRTC FUNCTIONS =====
 
     window.addEventListener('resize', () => {
         if (messagesContainer.children.length > 0) {
