@@ -4,6 +4,7 @@ using Insightly.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Insightly.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251029225313_addChatTable")]
+    partial class addChatTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -192,13 +195,25 @@ namespace Insightly.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<string>("OtherUserId1")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("UserId1")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("OtherUserId");
+
+                    b.HasIndex("OtherUserId1");
+
+                    b.HasIndex("UserId1");
 
                     b.HasIndex("UserId", "OtherUserId")
                         .IsUnique();
@@ -533,16 +548,28 @@ namespace Insightly.Migrations
 
             modelBuilder.Entity("Insightly.Models.Chat", b =>
                 {
-                    b.HasOne("Insightly.Models.ApplicationUser", "OtherUser")
+                    b.HasOne("Insightly.Models.ApplicationUser", null)
                         .WithMany("OtherChats")
                         .HasForeignKey("OtherUserId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("Insightly.Models.ApplicationUser", "User")
+                    b.HasOne("Insightly.Models.ApplicationUser", "OtherUser")
+                        .WithMany()
+                        .HasForeignKey("OtherUserId1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Insightly.Models.ApplicationUser", null)
                         .WithMany("Chats")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Insightly.Models.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId1")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("OtherUser");

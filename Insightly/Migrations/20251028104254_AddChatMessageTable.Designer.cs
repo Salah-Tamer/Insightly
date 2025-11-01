@@ -4,6 +4,7 @@ using Insightly.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Insightly.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251028104254_AddChatMessageTable")]
+    partial class AddChatMessageTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -180,32 +183,6 @@ namespace Insightly.Migrations
                     b.ToTable("ArticleReads");
                 });
 
-            modelBuilder.Entity("Insightly.Models.Chat", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("OtherUserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OtherUserId");
-
-                    b.HasIndex("UserId", "OtherUserId")
-                        .IsUnique();
-
-                    b.ToTable("Chats");
-                });
-
             modelBuilder.Entity("Insightly.Models.ChatMessage", b =>
                 {
                     b.Property<int>("Id")
@@ -214,9 +191,6 @@ namespace Insightly.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("ChatId")
-                        .HasColumnType("int");
-
                     b.Property<bool>("IsRead")
                         .HasColumnType("bit");
 
@@ -224,18 +198,18 @@ namespace Insightly.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ReceiverId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("SenderId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("SentAt")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ChatId");
-
-                    b.HasIndex("SenderId");
 
                     b.ToTable("ChatMessages");
                 });
@@ -531,44 +505,6 @@ namespace Insightly.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Insightly.Models.Chat", b =>
-                {
-                    b.HasOne("Insightly.Models.ApplicationUser", "OtherUser")
-                        .WithMany("OtherChats")
-                        .HasForeignKey("OtherUserId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("Insightly.Models.ApplicationUser", "User")
-                        .WithMany("Chats")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("OtherUser");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Insightly.Models.ChatMessage", b =>
-                {
-                    b.HasOne("Insightly.Models.Chat", "Chat")
-                        .WithMany("Messages")
-                        .HasForeignKey("ChatId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Insightly.Models.ApplicationUser", "Sender")
-                        .WithMany()
-                        .HasForeignKey("SenderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Chat");
-
-                    b.Navigation("Sender");
-                });
-
             modelBuilder.Entity("Insightly.Models.Comment", b =>
                 {
                     b.HasOne("Insightly.Models.Article", "Article")
@@ -700,8 +636,6 @@ namespace Insightly.Migrations
                 {
                     b.Navigation("Articles");
 
-                    b.Navigation("Chats");
-
                     b.Navigation("CommentVotes");
 
                     b.Navigation("Comments");
@@ -709,8 +643,6 @@ namespace Insightly.Migrations
                     b.Navigation("Followers");
 
                     b.Navigation("Following");
-
-                    b.Navigation("OtherChats");
 
                     b.Navigation("SavedArticles");
 
@@ -722,11 +654,6 @@ namespace Insightly.Migrations
                     b.Navigation("Comments");
 
                     b.Navigation("Votes");
-                });
-
-            modelBuilder.Entity("Insightly.Models.Chat", b =>
-                {
-                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("Insightly.Models.Comment", b =>

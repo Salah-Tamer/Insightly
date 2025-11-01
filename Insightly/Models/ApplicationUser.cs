@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
+using System.Drawing.Printing;
 
 namespace Insightly.Models
 {
@@ -23,11 +24,13 @@ namespace Insightly.Models
 
         public virtual List<Article> Articles { get; set; } = new();
         public virtual List<ArticleRead> SavedArticles { get; set; } = new();
-        public virtual List<Comment> Comments { get; set; } = new(); 
+        public virtual List<Comment> Comments { get; set; } = new();
         public virtual List<Vote> Votes { get; set; } = new();
         public virtual List<CommentVote> CommentVotes { get; set; } = new();
-        public virtual List<Follow> Followers { get; set; } = new(); 
+        public virtual List<Follow> Followers { get; set; } = new();
         public virtual List<Follow> Following { get; set; } = new();
+        public virtual ICollection<Chat> Chats { get; set; } = new List<Chat>();
+        public virtual ICollection<Chat> OtherChats { get; set; } = new List<Chat>();
     }
 }
 
