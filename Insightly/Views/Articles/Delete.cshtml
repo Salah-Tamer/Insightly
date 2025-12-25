@@ -1,4 +1,4 @@
-﻿@model Insightly.Models.Article
+﻿@model Insightly.ViewModels.ArticleDetailsViewModel
 @{
     ViewData["Title"] = "Delete Article";
 }
@@ -10,7 +10,7 @@
         <h4>Are you sure you want to delete this article?</h4>
         <p><strong>@Model.Title</strong></p>
         <p>@Model.Content</p>
-        <small class="text-muted">By @Model.Author.Name on @Model.CreatedAt.ToString("dd MMM yyyy")</small>
+        <small class="text-muted">By @Model.AuthorName on @Model.CreatedAt.ToString("dd MMM yyyy")</small>
     </div>
 
     <form asp-action="Delete" method="post">

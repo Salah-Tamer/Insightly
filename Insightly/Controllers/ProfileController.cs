@@ -1,5 +1,7 @@
+using AutoMapper;
 using Insightly.Models;
 using Insightly.Repositories;
+using Insightly.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -12,11 +14,13 @@ namespace Insightly.Controllers
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
 
-        public ProfileController(UserManager<ApplicationUser> userManager, IUnitOfWork unitOfWork)
+        public ProfileController(UserManager<ApplicationUser> userManager, IUnitOfWork unitOfWork, IMapper mapper)
         {
             _userManager = userManager;
             _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
 
         public async Task<IActionResult> Index()
@@ -38,10 +42,14 @@ namespace Insightly.Controllers
             var followersCount = await _unitOfWork.Follows.GetFollowersCountAsync(user.Id);
             var followingCount = await _unitOfWork.Follows.GetFollowingCountAsync(user.Id);
 
-            ViewBag.Articles = articles;
+            // Map to ViewModels using AutoMapper
+            var articleViewModels = _mapper.Map<List<ArticleListItemViewModel>>(articles);
+            var profileViewModel = _mapper.Map<ProfileViewModel>(user);
+
+            ViewBag.Articles = articleViewModels;
             ViewBag.FollowersCount = followersCount;
             ViewBag.FollowingCount = followingCount;
-            return View(user);
+            return View(profileViewModel);
         }
 
         public async Task<IActionResult> Edit()
@@ -177,12 +185,16 @@ namespace Insightly.Controllers
                 isFollowing = await _unitOfWork.Follows.ExistsAsync(currentUser.Id, id);
             }
 
-            ViewBag.Articles = articles;
+            // Map to ViewModels using AutoMapper
+            var articleViewModels = _mapper.Map<List<ArticleListItemViewModel>>(articles);
+            var profileViewModel = _mapper.Map<ProfileViewModel>(user);
+
+            ViewBag.Articles = articleViewModels;
             ViewBag.FollowersCount = followersCount;
             ViewBag.FollowingCount = followingCount;
             ViewBag.IsFollowing = isFollowing;
 
-            return View(user);
+            return View(profileViewModel);
         }
 
 

@@ -1,5 +1,7 @@
-﻿using Insightly.Models;
+﻿using AutoMapper;
+using Insightly.Models;
 using Insightly.Repositories;
+using Insightly.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -10,11 +12,13 @@ namespace Insightly.Controllers
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IMapper _mapper;
 
-        public CommentsController(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
+        public CommentsController(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
+            _mapper = mapper;
         }
 
 
@@ -46,6 +50,12 @@ namespace Insightly.Controllers
             await _unitOfWork.Comments.AddAsync(comment);
             await _unitOfWork.SaveChangesAsync();
 
+            var commentWithAuthor = await _unitOfWork.Comments.GetByIdWithAuthorAsync(comment.CommentId);
+            if (commentWithAuthor == null)
+            {
+                return BadRequest(new { message = "Failed to retrieve comment" });
+            }
+
             var isAjax = string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
 
             if (!isAjax)
@@ -54,17 +64,8 @@ namespace Insightly.Controllers
                 return RedirectToAction("Details", "Articles", new { id = articleId });
             }
 
-            return Json(new
-            {
-                id = comment.CommentId,
-                content = comment.Content,
-                author = user.Name,
-                authorId = user.Id,
-                authorProfilePicture = user.ProfilePicture,
-                createdAt = comment.CreatedAt.ToString("dd MMM yyyy HH:mm"),
-                updatedAt = (string?)null,
-                isUpdated = false
-            });
+            var commentDto = _mapper.Map<CommentJsonDto>(commentWithAuthor);
+            return Json(commentDto);
         }
 
 
@@ -72,19 +73,9 @@ namespace Insightly.Controllers
         public async Task<IActionResult> List(int articleId)
         {
             var comments = await _unitOfWork.Comments.GetByArticleIdAsync(articleId);
-            var result = comments.Select(c => new
-            {
-                id = c.CommentId,
-                content = c.Content,
-                author = c.Author.Name,
-                authorId = c.AuthorId,
-                authorProfilePicture = c.Author.ProfilePicture,
-                createdAt = c.CreatedAt.ToString("dd MMM yyyy HH:mm"),
-                updatedAt = c.UpdatedAt.HasValue ? c.UpdatedAt.Value.ToString("dd MMM yyyy HH:mm") : (string?)null,
-                isUpdated = c.UpdatedAt.HasValue
-            });
+            var commentDtos = _mapper.Map<List<CommentJsonDto>>(comments);
 
-            return Json(result);
+            return Json(commentDtos);
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -165,17 +156,8 @@ namespace Insightly.Controllers
                 return RedirectToAction("Details", "Articles", new { id = comment.ArticleId });
             }
 
-            return Json(new
-            {
-                id = comment.CommentId,
-                content = comment.Content,
-                author = comment.Author.Name,
-                authorId = comment.AuthorId,
-                authorProfilePicture = comment.Author.ProfilePicture,
-                createdAt = comment.CreatedAt.ToString("dd MMM yyyy HH:mm"),
-                updatedAt = comment.UpdatedAt?.ToString("dd MMM yyyy HH:mm"),
-                isUpdated = comment.UpdatedAt.HasValue
-            });
+            var commentDto = _mapper.Map<CommentJsonDto>(comment);
+            return Json(commentDto);
         }
     }
 }

@@ -1,6 +1,8 @@
-﻿using Insightly.Models;
+﻿using AutoMapper;
+using Insightly.Models;
 using Insightly.Repositories;
 using Insightly.Services;
+using Insightly.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -13,32 +15,28 @@ namespace Insightly.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IArticleService _articleService;
         private readonly IFileUploadService _fileUploadService;
+        private readonly IMapper _mapper;
 
-        public ArticlesController(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IArticleService articleService, IFileUploadService fileUploadService)
+        public ArticlesController(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IArticleService articleService, IFileUploadService fileUploadService, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
             _articleService = articleService;
             _fileUploadService = fileUploadService;
+            _mapper = mapper;
         }
 
         [Authorize(Roles = "Admin,User")]
         public IActionResult Create()
         {
-            return View();
+            return View(new ArticleCreateViewModel());
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,User")]
-        public async Task<IActionResult> Create([FromForm] string title, [FromForm] string content, IFormFile? photo)
+        public async Task<IActionResult> Create(ArticleCreateViewModel viewModel, IFormFile? photo)
         {
-            var article = new Article
-            {
-                Title = title,
-                Content = content,
-            };
-
             if (ModelState.IsValid)
             {
                 var currentUser = await _userManager.GetUserAsync(User);
@@ -50,30 +48,30 @@ namespace Insightly.Controllers
                 string? imagePath = null;
                 if (photo != null && photo.Length > 0)
                 {
-                    var (isValid, errorMessage) = await _fileUploadService.ValidateImageAsync(photo);
+                    var (isValid, validationError) = await _fileUploadService.ValidateImageAsync(photo);
                     if (!isValid)
                     {
-                        ModelState.AddModelError("photo", errorMessage ?? "Invalid image file.");
-                        return View(article);
+                        ModelState.AddModelError("photo", validationError ?? "Invalid image file.");
+                        return View(viewModel);
                     }
 
                     imagePath = await _fileUploadService.UploadArticleImageAsync(photo);
                 }
 
                 // Create article using service
-                var (success, errorMessage, createdArticle) = await _articleService.CreateArticleAsync(title, content, currentUser.Id, imagePath);
+                var (success, createError, createdArticle) = await _articleService.CreateArticleAsync(viewModel.Title, viewModel.Content, currentUser.Id, imagePath);
                 
                 if (!success)
                 {
-                    ModelState.AddModelError("", errorMessage ?? "Failed to create article.");
-                    return View(article);
+                    ModelState.AddModelError("", createError ?? "Failed to create article.");
+                    return View(viewModel);
                 }
 
                 TempData["SuccessMessage"] = "Article created successfully!";
                 return RedirectToAction("Index", "Home");
             }
 
-            return View(article);
+            return View(viewModel);
         }
         public async Task<IActionResult> Details(int id)
         {
@@ -103,7 +101,10 @@ namespace Insightly.Controllers
                 ViewBag.IsRead = false;
             }
 
-            return View(article);
+            // Map Article entity to ArticleDetailsViewModel using AutoMapper
+            var viewModel = _mapper.Map<ArticleDetailsViewModel>(article);
+
+            return View(viewModel);
         }
         [Authorize]
         public async Task<IActionResult> Edit(int id)
@@ -125,14 +126,17 @@ namespace Insightly.Controllers
                 return Forbid();
             }
 
-            return View(article);
+            // Map Article entity to ArticleEditViewModel using AutoMapper
+            var viewModel = _mapper.Map<ArticleEditViewModel>(article);
+
+            return View(viewModel);
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
-        public async Task<IActionResult> Edit(int id, [Bind("ArticleId,Title,Content")] Article article)
+        public async Task<IActionResult> Edit(int id, ArticleEditViewModel viewModel)
         {
-            if (id != article.ArticleId) return NotFound();
+            if (id != viewModel.ArticleId) return NotFound();
 
             var existingArticle = await _unitOfWork.Articles.GetByIdAsync(id);
             if (existingArticle == null) return NotFound();
@@ -148,14 +152,9 @@ namespace Insightly.Controllers
                 return Forbid();
             }
 
-            // Clear ModelState errors for fields we're not binding
-            ModelState.Remove("AuthorId");
-            ModelState.Remove("CreatedAt");
-            ModelState.Remove("Author");
-
             if (ModelState.IsValid)
             {
-                var (success, errorMessage) = await _articleService.UpdateArticleAsync(id, article.Title, article.Content, user.Id);
+                var (success, errorMessage) = await _articleService.UpdateArticleAsync(id, viewModel.Title, viewModel.Content, user.Id);
                 
                 if (!success)
                 {
@@ -167,9 +166,9 @@ namespace Insightly.Controllers
                 }
 
                 TempData["SuccessMessage"] = "Article updated successfully!";
-                return RedirectToAction(nameof(Details), new { id = article.ArticleId });
+                return RedirectToAction(nameof(Details), new { id = viewModel.ArticleId });
             }
-            return View(article);
+            return View(viewModel);
         }
         [Authorize]
         public async Task<IActionResult> Delete(int id)
@@ -190,7 +189,10 @@ namespace Insightly.Controllers
                 return Forbid();
             }
 
-            return View(article);
+            // Map Article entity to ArticleDetailsViewModel using AutoMapper
+            var viewModel = _mapper.Map<ArticleDetailsViewModel>(article);
+
+            return View(viewModel);
         }
 
         [HttpPost, ActionName("Delete")]
@@ -262,13 +264,13 @@ namespace Insightly.Controllers
             }
 
             var readArticles = await _unitOfWork.ArticleReads.GetByUserIdAsync(currentUser.Id);
-            var result = readArticles.Select(ar => new
+            var viewModels = readArticles.Select(ar => new SavedArticleViewModel
             {
-                Article = ar.Article,
+                Article = _mapper.Map<ArticleListItemViewModel>(ar.Article),
                 ReadAt = ar.ReadAt
-            });
+            }).ToList();
 
-            return View(result);
+            return View(viewModels);
         }
 
         [Authorize]
@@ -281,7 +283,9 @@ namespace Insightly.Controllers
             }
 
             var myArticles = await _unitOfWork.Articles.GetByAuthorIdAsync(currentUser.Id);
-            return View(myArticles);
+            var viewModels = _mapper.Map<List<ArticleListItemViewModel>>(myArticles);
+
+            return View(viewModels);
         }
 
         [Authorize]
@@ -294,7 +298,9 @@ namespace Insightly.Controllers
             }
 
             var followingArticles = await _unitOfWork.Articles.GetByFollowingUsersAsync(currentUser.Id);
-            return View(followingArticles);
+            var viewModels = _mapper.Map<List<ArticleListItemViewModel>>(followingArticles);
+
+            return View(viewModels);
         }
     }
 }

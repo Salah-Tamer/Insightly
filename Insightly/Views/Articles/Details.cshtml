@@ -1,4 +1,4 @@
-﻿@model Article
+﻿@model Insightly.ViewModels.ArticleDetailsViewModel
 @using System.Security.Claims
 @inject UserManager<Insightly.Models.ApplicationUser> _userManager
 
@@ -19,9 +19,9 @@
                 <div class="flex-grow-1">
                     <div class="d-flex align-items-center gap-3 mb-1">
                         <div class="flex-shrink-0">
-                            @if (!string.IsNullOrEmpty(Model.Author.ProfilePicture))
+                            @if (!string.IsNullOrEmpty(Model.AuthorProfilePicture))
                             {
-                                <img src="@Model.Author.ProfilePicture" alt="@Model.Author.Name" class="rounded-circle" style="width: 36px; height: 36px; object-fit: cover;" />
+                                <img src="@Model.AuthorProfilePicture" alt="@Model.AuthorName" class="rounded-circle" style="width: 36px; height: 36px; object-fit: cover;" />
                             }
                             else
                             {
@@ -31,7 +31,7 @@
                             }
                         </div>
                         <div class="d-flex align-items-center gap-2 small">
-                            <a asp-controller="Profile" asp-action="ViewProfile" asp-route-id="@Model.AuthorId" class="text-decoration-none fw-bold" style="color: #ff4b37 !important;">@Model.Author.Name</a>
+                            <a asp-controller="Profile" asp-action="ViewProfile" asp-route-id="@Model.AuthorId" class="text-decoration-none fw-bold" style="color: #ff4b37 !important;">@Model.AuthorName</a>
                             <span class="text-muted">•</span>
                             @if (Model.UpdatedAt.HasValue)
                             {
@@ -169,9 +169,9 @@
                             <div class="p-3" style="background-color: #f8f9fa; border-radius: 0.5rem; border-left: 4px solid #ff4b37;">
                                 <div class="d-flex align-items-start gap-3">
                                     <div class="flex-shrink-0">
-                                        @if (!string.IsNullOrEmpty(comment.Author.ProfilePicture))
+                                        @if (!string.IsNullOrEmpty(comment.AuthorProfilePicture))
                                         {
-                                            <img src="@comment.Author.ProfilePicture" alt="@comment.Author.Name" class="rounded-circle" style="width: 36px; height: 36px; object-fit: cover;" />
+                                            <img src="@comment.AuthorProfilePicture" alt="@comment.AuthorName" class="rounded-circle" style="width: 36px; height: 36px; object-fit: cover;" />
                                         }
                                         else
                                         {
@@ -183,7 +183,7 @@
                                     <div class="flex-grow-1">
                                         <div class="d-flex justify-content-between align-items-start mb-2">
                                             <div class="d-flex align-items-center gap-2">
-                                                <a asp-controller="Profile" asp-action="ViewProfile" asp-route-id="@comment.AuthorId" class="text-decoration-none fw-bold small" style="color: #ff4b37 !important;">@comment.Author.Name</a>
+                                                <a asp-controller="Profile" asp-action="ViewProfile" asp-route-id="@comment.AuthorId" class="text-decoration-none fw-bold small" style="color: #ff4b37 !important;">@comment.AuthorName</a>
                                                 <span class="text-muted small">•</span>
                                                 @if (comment.UpdatedAt.HasValue)
                                                 {
@@ -322,12 +322,12 @@
                 if (res.status === 401) { window.location.href = '/Identity/Account/Login'; return { removed: false }; }
                 if (res.ok) {
                     let removed = false;
-                    try { const j = await res.json(); removed = !!(j && j.removed); } catch (e) {}
+                    try { const j = await res.json(); removed = !!(j && j.isRemoved); } catch (e) {}
                     const c = await fetch(`/Votes/CommentCount?commentId=${commentId}`);
                     if (c.ok) {
                         const json = await c.json();
                         const s = document.getElementById(`comment-score-${commentId}`);
-                        if (s) s.textContent = (json && typeof json.netScore !== 'undefined') ? json.netScore : 0;
+                        if (s) s.textContent = (json && typeof json.score !== 'undefined') ? json.score : 0;
                     }
                     return { removed };
                 }
@@ -405,7 +405,7 @@
                         const r = await fetch(`/Votes/Count?articleId=${articleId}`);
                         if (r.ok && scoreEl) {
                             const j = await r.json();
-                            scoreEl.textContent = (j && typeof j.netScore !== 'undefined') ? j.netScore : scoreEl.textContent;
+                            scoreEl.textContent = (j && typeof j.score !== 'undefined') ? j.score : scoreEl.textContent;
                         }
                     } catch (e) {}
 
@@ -413,7 +413,7 @@
                         const rv = await fetch(`/Votes/UserArticleVote?articleId=${articleId}`);
                         if (rv.ok) {
                             const v = await rv.json();
-                            if (v && v.voted === true) {
+                            if (v && v.hasVoted === true) {
                                 if (v.isUpvote) { up?.classList.add('active-up'); down?.classList.remove('active-down'); }
                                 else { down?.classList.add('active-down'); up?.classList.remove('active-up'); }
                             } else {
@@ -434,13 +434,13 @@
                         const res = await fetch('/Votes/Vote', { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
                         if (res.status === 401) { window.location.href = '/Identity/Account/Login'; return; }
                         if (!res.ok) return;
-                        let removed = false; try { const j = await res.json(); removed = !!(j && j.removed); } catch (e) {}
+                        let removed = false; try { const j = await res.json(); removed = !!(j && j.isRemoved); } catch (e) {}
 
                         try {
                             const c = await fetch(`/Votes/Count?articleId=${articleId}`);
                             if (c.ok && scoreEl) {
                                 const json = await c.json();
-                                scoreEl.textContent = (json && typeof json.netScore !== 'undefined') ? json.netScore : scoreEl.textContent;
+                                scoreEl.textContent = (json && typeof json.score !== 'undefined') ? json.score : scoreEl.textContent;
                             }
                         } catch (e) {}
 
@@ -465,7 +465,7 @@
                     const res = await fetch(`/Votes/CommentCount?commentId=${commentId}`);
                     if (res.ok) {
                         const json = await res.json();
-                        el.textContent = (json && typeof json.netScore !== 'undefined') ? json.netScore : 0;
+                        el.textContent = (json && typeof json.score !== 'undefined') ? json.score : 0;
                     }
                 } catch (e) {}
             });
@@ -478,7 +478,7 @@
                     const rv = await fetch(`/Votes/UserCommentVote?commentId=${commentId}`);
                     if (rv.ok) {
                         const v = await rv.json();
-                        if (v && v.voted === true) {
+                        if (v && v.hasVoted === true) {
                             if (v.isUpvote) { btn.classList.add('active-up'); if (downBtn) downBtn.classList.remove('active-down'); }
                             else { if (downBtn) downBtn.classList.add('active-down'); btn.classList.remove('active-up'); }
                         } else {

@@ -1,6 +1,7 @@
 ﻿using Insightly.Models;
 using Insightly.Repositories;
 using Insightly.Services;
+using Insightly.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -44,14 +45,14 @@ namespace Insightly.Controllers
                 return RedirectToAction("Details", "Articles", new { id = articleId });
             }
 
-            return Ok(new { message, removed });
+            return Ok(new VoteResponseDto { IsRemoved = removed });
         }
 
         [HttpGet]
         public async Task<IActionResult> Count(int articleId)
         {
             var netScore = await _voteService.GetArticleNetScoreAsync(articleId);
-            return Ok(new { netScore });
+            return Ok(new VoteCountDto { Score = netScore });
         }
 
         [HttpGet]
@@ -62,8 +63,8 @@ namespace Insightly.Controllers
 
             var (voted, isUpvote) = await _voteService.GetUserArticleVoteAsync(articleId, user.Id);
 
-            if (!voted) return Ok(new { voted = false });
-            return Ok(new { voted = true, isUpvote = isUpvote });
+            if (!voted) return Ok(new UserVoteStatusDto { HasVoted = false });
+            return Ok(new UserVoteStatusDto { HasVoted = true, IsUpvote = isUpvote });
         }
 
         [HttpPost]
@@ -84,7 +85,7 @@ namespace Insightly.Controllers
                 return BadRequest(new { message });
             }
 
-            return Ok(new { message, removed });
+            return Ok(new VoteResponseDto { IsRemoved = removed });
         }
 
         [HttpPost]
@@ -108,14 +109,14 @@ namespace Insightly.Controllers
                 return RedirectToAction("Details", "Articles", new { id = await GetArticleIdFromComment(commentId) });
             }
 
-            return Ok(new { message, removed });
+            return Ok(new VoteResponseDto { IsRemoved = removed });
         }
 
         [HttpGet]
         public async Task<IActionResult> CommentCount(int commentId)
         {
             var netScore = await _voteService.GetCommentNetScoreAsync(commentId);
-            return Ok(new { netScore });
+            return Ok(new VoteCountDto { Score = netScore });
         }
 
         [HttpGet]
@@ -126,8 +127,8 @@ namespace Insightly.Controllers
 
             var (voted, isUpvote) = await _voteService.GetUserCommentVoteAsync(commentId, user.Id);
 
-            if (!voted) return Ok(new { voted = false });
-            return Ok(new { voted = true, isUpvote = isUpvote });
+            if (!voted) return Ok(new UserVoteStatusDto { HasVoted = false });
+            return Ok(new UserVoteStatusDto { HasVoted = true, IsUpvote = isUpvote });
         }
 
         private async Task<int> GetArticleIdFromComment(int commentId)

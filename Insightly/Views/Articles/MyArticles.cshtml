@@ -1,4 +1,4 @@
-@model List<Article>
+@model List<Insightly.ViewModels.ArticleListItemViewModel>
 @{
     ViewData["Title"] = "My Articles";
 }
@@ -20,7 +20,7 @@
                 <div class="post-card d-flex article-item"
                      data-title="@article.Title.ToLower()"
                      data-content="@article.Content.ToLower()"
-                     data-author="@article.Author.Name.ToLower()">
+                     data-author="@article.AuthorName.ToLower()">
                     <div class="vote-col d-flex flex-column align-items-center justify-content-start py-2">
                         <button class="btn btn-link p-0 vote-btn upvote" data-article-id="@article.ArticleId" aria-label="Upvote">
                             <i class="bi bi-arrow-up-circle fs-4"></i>
@@ -32,7 +32,7 @@
                     </div>
                     <div class="flex-grow-1 p-3">
                         <div class="d-flex align-items-center gap-2 mb-1 text-muted small">
-                            <span>Posted by @article.Author.Name</span>
+                            <span>Posted by @article.AuthorName</span>
                             <span>•</span>
                             <span>@article.CreatedAt.ToString("dd MMM h:mm tt")</span>
                         </div>
@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch(`/Votes/Count?articleId=${id}`);
       if (res.ok) {
         const json = await res.json();
-        el.textContent = (json && typeof json.netScore !== 'undefined') ? json.netScore : 0;
+        el.textContent = (json && typeof json.score !== 'undefined') ? json.score : 0;
       }
     } catch (e) {}
   });
@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         if (res.ok) {
           const json = await res.json();
-          if (json.voted) {
+          if (json.hasVoted) {
             const upvoteBtn = document.querySelector(`.upvote[data-article-id="${articleId}"]`);
             const downvoteBtn = document.querySelector(`.downvote[data-article-id="${articleId}"]`);
             if (json.isUpvote) {
@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (c.ok) {
           const json = await c.json();
           const s = document.getElementById(`score-${articleId}`);
-          if (s) s.textContent = (json && typeof json.netScore !== 'undefined') ? json.netScore : 0;
+          if (s) s.textContent = (json && typeof json.score !== 'undefined') ? json.score : 0;
         }
       } else if (res.status === 401) {
         window.location.href = '/Identity/Account/Login';

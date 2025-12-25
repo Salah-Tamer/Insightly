@@ -21,6 +21,9 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 builder.Services.AddMemoryCache();
+
+// Register AutoMapper
+builder.Services.AddAutoMapper(typeof(Program).Assembly);
 builder.Services.AddScoped<IVerificationCodeService, VerificationCodeService>();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddSignalR();

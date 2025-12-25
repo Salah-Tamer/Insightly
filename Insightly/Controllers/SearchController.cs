@@ -1,5 +1,7 @@
+using AutoMapper;
 using Insightly.Models;
 using Insightly.Repositories;
+using Insightly.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Insightly.Controllers
@@ -7,10 +9,12 @@ namespace Insightly.Controllers
     public class SearchController : Controller
     {
         private readonly IArticleRepository _articleRepository;
+        private readonly IMapper _mapper;
 
-        public SearchController(IArticleRepository articleRepository)
+        public SearchController(IArticleRepository articleRepository, IMapper mapper)
         {
             _articleRepository = articleRepository;
+            _mapper = mapper;
         }
 
 
@@ -18,22 +22,13 @@ namespace Insightly.Controllers
         public async Task<IActionResult> SearchAjax(string query)
         {
             var articles = await _articleRepository.SearchAsync(query);
-            var result = articles.Select(a => new {
-                articleId = a.ArticleId,
-                title = a.Title,
-                content = a.Content,
-                createdAt = a.CreatedAt,
-                author = new {
-                    name = a.Author.Name,
-                    id = a.AuthorId
-                }
-            }).ToList();
+            var articleDtos = _mapper.Map<List<ArticleJsonDto>>(articles);
 
             return Json(new { 
-                articles = result,
+                articles = articleDtos,
                 query = query,
                 hasQuery = !string.IsNullOrWhiteSpace(query),
-                count = result.Count
+                count = articleDtos.Count
             });
         }
     }

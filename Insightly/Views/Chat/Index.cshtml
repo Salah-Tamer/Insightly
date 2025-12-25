@@ -1,4 +1,4 @@
-﻿@model IEnumerable<Insightly.Models.Chat>
+﻿@model IEnumerable<Insightly.ViewModels.ChatViewModel>
 @{
     ViewData["Title"] = "Messages";
     var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;

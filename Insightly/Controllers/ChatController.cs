@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using Insightly.Repositories;
 using Insightly.Services;
+using Insightly.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Insightly.Models;
 using System.Linq;
@@ -15,12 +17,14 @@ namespace Insightly.Controllers
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IChatService _chatService;
+        private readonly IMapper _mapper;
 
-        public ChatController(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IChatService chatService)
+        public ChatController(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IChatService chatService, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
             _chatService = chatService;
+            _mapper = mapper;
         }
 
         public async Task<IActionResult> Index()
@@ -33,10 +37,19 @@ namespace Insightly.Controllers
 
             var (chats, followers, following) = await _chatService.GetUserChatDataAsync(user.Id);
 
-            ViewBag.Followers = followers;
-            ViewBag.Following = following;
+            // Map to ViewModels using AutoMapper
+            var chatViewModels = _mapper.Map<List<ChatViewModel>>(chats);
+            
+            // Extract users from Follow entities and map to ViewModels
+            var followerUsers = followers.Select(f => f.Follower).Where(u => u != null);
+            var followingUsers = following.Select(f => f.Following).Where(u => u != null);
+            var followerViewModels = _mapper.Map<List<UserListItemViewModel>>(followerUsers);
+            var followingViewModels = _mapper.Map<List<UserListItemViewModel>>(followingUsers);
 
-            return View(chats);
+            ViewBag.Followers = followerViewModels;
+            ViewBag.Following = followingViewModels;
+
+            return View(chatViewModels);
         }
     }
 }
