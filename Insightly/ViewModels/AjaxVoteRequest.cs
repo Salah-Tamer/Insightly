@@ -1,6 +1,4 @@
-using Microsoft.AspNetCore.SignalR;
-
-namespace Insightly.Models
+namespace Insightly.ViewModels
 {
     public class AjaxVoteRequest
     {
@@ -8,3 +6,4 @@ namespace Insightly.Models
         public bool IsUpvote { get; set; }
     }
 }
+

@@ -1,6 +1,7 @@
 using AutoMapper;
 using Insightly.Models;
 using Insightly.Repositories;
+using Insightly.Services;
 using Insightly.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;

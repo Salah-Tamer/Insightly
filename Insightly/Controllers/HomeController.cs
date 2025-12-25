@@ -1,5 +1,4 @@
 using AutoMapper;
-using Insightly.Models;
 using Insightly.Repositories;
 using Insightly.ViewModels;
 using Microsoft.AspNetCore.Mvc;

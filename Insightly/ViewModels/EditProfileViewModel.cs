@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Insightly.Models
+namespace Insightly.ViewModels
 {
     public class EditProfileViewModel
     {
@@ -22,3 +22,4 @@ namespace Insightly.Models
         public string Gender { get; set; } = string.Empty;
     }
 }
+

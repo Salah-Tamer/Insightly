@@ -1,4 +1,4 @@
-namespace Insightly.Models
+namespace Insightly.ViewModels
 {
     public class ErrorViewModel
     {
@@ -7,3 +7,4 @@ namespace Insightly.Models
         public bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
     }
 }
+
