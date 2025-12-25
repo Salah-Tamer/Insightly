@@ -33,6 +33,13 @@ builder.Services.AddScoped<IVoteRepository, VoteRepository>();
 builder.Services.AddScoped<ICommentVoteRepository, CommentVoteRepository>();
 builder.Services.AddScoped<IFollowRepository, FollowRepository>();
 builder.Services.AddScoped<IArticleReadRepository, ArticleReadRepository>();
+builder.Services.AddScoped<IChatRepository, ChatRepository>();
+
+// Register business services
+builder.Services.AddScoped<IFileUploadService, FileUploadService>();
+builder.Services.AddScoped<IArticleService, ArticleService>();
+builder.Services.AddScoped<IVoteService, VoteService>();
+builder.Services.AddScoped<IChatService, ChatService>();
 
 // Configure SMTP settings
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));

@@ -1,5 +1,6 @@
 ﻿using Insightly.Models;
 using Insightly.Repositories;
+using Insightly.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -10,11 +11,15 @@ namespace Insightly.Controllers
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IArticleService _articleService;
+        private readonly IFileUploadService _fileUploadService;
 
-        public ArticlesController(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
+        public ArticlesController(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IArticleService articleService, IFileUploadService fileUploadService)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
+            _articleService = articleService;
+            _fileUploadService = fileUploadService;
         }
 
         [Authorize(Roles = "Admin,User")]
@@ -42,48 +47,27 @@ namespace Insightly.Controllers
                     return Unauthorized();
                 }
 
-                article.AuthorId = currentUser.Id;
-                article.CreatedAt = DateTime.Now;
-
-                // Handle optional photo upload
+                string? imagePath = null;
                 if (photo != null && photo.Length > 0)
                 {
-                    // Basic validation: limit size to 5 MB and allow common image types
-                    long maxBytes = 5 * 1024 * 1024;
-                    if (photo.Length > maxBytes)
+                    var (isValid, errorMessage) = await _fileUploadService.ValidateImageAsync(photo);
+                    if (!isValid)
                     {
-                        ModelState.AddModelError("photo", "Photo must be 5 MB or smaller.");
+                        ModelState.AddModelError("photo", errorMessage ?? "Invalid image file.");
                         return View(article);
                     }
 
-                    var permitted = new[] { "image/jpeg", "image/png", "image/gif" };
-                    if (!permitted.Contains(photo.ContentType))
-                    {
-                        ModelState.AddModelError("photo", "Only JPG, PNG, or GIF images are allowed.");
-                        return View(article);
-                    }
-
-                    var uploadsRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "articles");
-                    if (!Directory.Exists(uploadsRoot))
-                    {
-                        Directory.CreateDirectory(uploadsRoot);
-                    }
-
-                    var fileExtension = Path.GetExtension(photo.FileName);
-                    var safeFileName = $"article_{Guid.NewGuid():N}{fileExtension}";
-                    var filePath = Path.Combine(uploadsRoot, safeFileName);
-
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await photo.CopyToAsync(stream);
-                    }
-
-                    // Store a web-accessible relative path for rendering
-                    article.ImagePath = $"/uploads/articles/{safeFileName}";
+                    imagePath = await _fileUploadService.UploadArticleImageAsync(photo);
                 }
 
-                await _unitOfWork.Articles.AddAsync(article);
-                await _unitOfWork.SaveChangesAsync();
+                // Create article using service
+                var (success, errorMessage, createdArticle) = await _articleService.CreateArticleAsync(title, content, currentUser.Id, imagePath);
+                
+                if (!success)
+                {
+                    ModelState.AddModelError("", errorMessage ?? "Failed to create article.");
+                    return View(article);
+                }
 
                 TempData["SuccessMessage"] = "Article created successfully!";
                 return RedirectToAction("Index", "Home");
@@ -93,7 +77,10 @@ namespace Insightly.Controllers
         }
         public async Task<IActionResult> Details(int id)
         {
-            var article = await _unitOfWork.Articles.GetByIdWithAuthorAndCommentsAsync(id);
+            var currentUser = await _userManager.GetUserAsync(User);
+            var userId = currentUser?.Id;
+
+            var article = await _articleService.GetArticleDetailsAsync(id, userId);
 
             if (article == null)
             {
@@ -106,7 +93,6 @@ namespace Insightly.Controllers
             ViewBag.NetScore = netScore;
             ViewBag.CommentsCount = commentsCount;
 
-            var currentUser = await _userManager.GetUserAsync(User);
             if (currentUser != null)
             {
                 var isRead = await _unitOfWork.ArticleReads.ExistsAsync(currentUser.Id, id);
@@ -169,22 +155,19 @@ namespace Insightly.Controllers
 
             if (ModelState.IsValid)
             {
-                try
+                var (success, errorMessage) = await _articleService.UpdateArticleAsync(id, article.Title, article.Content, user.Id);
+                
+                if (!success)
                 {
-                    existingArticle.Title = article.Title;
-                    existingArticle.Content = article.Content;
-                    existingArticle.UpdatedAt = DateTime.Now;
-
-                    await _unitOfWork.Articles.UpdateAsync(existingArticle);
-                    await _unitOfWork.SaveChangesAsync();
-
-                    TempData["SuccessMessage"] = "Article updated successfully!";
-                    return RedirectToAction(nameof(Details), new { id = article.ArticleId });
-                }
-                catch (Exception)
-                {
+                    if (errorMessage == "Unauthorized")
+                    {
+                        return Forbid();
+                    }
                     return NotFound();
                 }
+
+                TempData["SuccessMessage"] = "Article updated successfully!";
+                return RedirectToAction(nameof(Details), new { id = article.ArticleId });
             }
             return View(article);
         }
@@ -225,13 +208,16 @@ namespace Insightly.Controllers
             }
 
             bool isAdmin = await _userManager.IsInRoleAsync(user, "Admin");
-            if (article.AuthorId != user.Id && !isAdmin)
+            var (success, errorMessage) = await _articleService.DeleteArticleAsync(id, user.Id, isAdmin);
+            
+            if (!success)
             {
-                return Forbid();
+                if (errorMessage == "Unauthorized")
+                {
+                    return Forbid();
+                }
+                return NotFound();
             }
-
-            await _unitOfWork.Articles.DeleteAsync(id);
-            await _unitOfWork.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Article deleted successfully!";
             return RedirectToAction("Index", "Home");
@@ -248,36 +234,11 @@ namespace Insightly.Controllers
                 return Unauthorized();
             }
 
-            var article = await _unitOfWork.Articles.GetByIdAsync(id);
-            if (article == null)
+            var (success, isSaved, message) = await _articleService.ToggleSaveArticleAsync(id, currentUser.Id);
+            
+            if (!success)
             {
                 return NotFound();
-            }
-
-            var existingRead = await _unitOfWork.ArticleReads.GetByUserAndArticleAsync(currentUser.Id, id);
-            bool isSaved = false;
-            string message = "";
-
-            if (existingRead == null)
-            {
-                var articleRead = new ArticleRead
-                {
-                    ArticleId = id,
-                    UserId = currentUser.Id,
-                    ReadAt = DateTime.Now
-                };
-
-                await _unitOfWork.ArticleReads.AddAsync(articleRead);
-                await _unitOfWork.SaveChangesAsync();
-                isSaved = true;
-                message = "Article saved!";
-            }
-            else
-            {
-                await _unitOfWork.ArticleReads.DeleteByUserAndArticleAsync(currentUser.Id, id);
-                await _unitOfWork.SaveChangesAsync();
-                isSaved = false;
-                message = "Article unsaved!";
             }
 
             var isAjax = string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
