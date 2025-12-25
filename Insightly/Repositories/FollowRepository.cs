@@ -50,7 +50,6 @@ namespace Insightly.Repositories
         public async Task<Follow> AddAsync(Follow follow)
         {
             _context.Follows.Add(follow);
-            await _context.SaveChangesAsync();
             return follow;
         }
 
@@ -60,7 +59,6 @@ namespace Insightly.Repositories
             if (follow != null)
             {
                 _context.Follows.Remove(follow);
-                await _context.SaveChangesAsync();
             }
         }
 
@@ -70,7 +68,6 @@ namespace Insightly.Repositories
             if (follow != null)
             {
                 _context.Follows.Remove(follow);
-                await _context.SaveChangesAsync();
             }
         }
 

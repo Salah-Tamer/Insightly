@@ -53,6 +53,8 @@ namespace Insightly.Controllers
                 await _unitOfWork.Votes.AddAsync(vote);
             }
 
+            await _unitOfWork.SaveChangesAsync();
+
             var isAjax = string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
 
             if (!isAjax)
@@ -128,6 +130,8 @@ namespace Insightly.Controllers
                 await _unitOfWork.Votes.AddAsync(vote);
             }
 
+            await _unitOfWork.SaveChangesAsync();
+
             return Ok(new { message = removed ? "Vote removed!" : "Vote saved!", removed });
         }
 
@@ -164,6 +168,8 @@ namespace Insightly.Controllers
                 };
                 await _unitOfWork.CommentVotes.AddAsync(vote);
             }
+
+            await _unitOfWork.SaveChangesAsync();
 
             var isAjax = string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
 

@@ -41,6 +41,7 @@ namespace Insightly.Controllers
                 };
 
                 await _unitOfWork.Follows.AddAsync(follow);
+                await _unitOfWork.SaveChangesAsync();
             }
 
             return RedirectToAction("ViewProfile", "Profile", new { id = userId });
@@ -53,6 +54,7 @@ namespace Insightly.Controllers
             if (currentUser == null) return Unauthorized();
 
             await _unitOfWork.Follows.DeleteByFollowerAndFollowingAsync(currentUser.Id, userId);
+            await _unitOfWork.SaveChangesAsync();
 
             return RedirectToAction("ViewProfile", "Profile", new { id = userId });
         }

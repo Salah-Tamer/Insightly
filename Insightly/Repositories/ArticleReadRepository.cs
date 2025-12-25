@@ -54,7 +54,6 @@ namespace Insightly.Repositories
         public async Task<ArticleRead> AddAsync(ArticleRead articleRead)
         {
             _context.ArticleReads.Add(articleRead);
-            await _context.SaveChangesAsync();
             return articleRead;
         }
 
@@ -64,7 +63,6 @@ namespace Insightly.Repositories
             if (articleRead != null)
             {
                 _context.ArticleReads.Remove(articleRead);
-                await _context.SaveChangesAsync();
             }
         }
 
@@ -74,7 +72,6 @@ namespace Insightly.Repositories
             if (articleRead != null)
             {
                 _context.ArticleReads.Remove(articleRead);
-                await _context.SaveChangesAsync();
             }
         }
 

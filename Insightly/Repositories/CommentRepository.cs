@@ -55,14 +55,12 @@ namespace Insightly.Repositories
         public async Task<Comment> AddAsync(Comment comment)
         {
             _context.Comments.Add(comment);
-            await _context.SaveChangesAsync();
             return comment;
         }
 
         public async Task<Comment> UpdateAsync(Comment comment)
         {
             _context.Comments.Update(comment);
-            await _context.SaveChangesAsync();
             return comment;
         }
 
@@ -72,7 +70,6 @@ namespace Insightly.Repositories
             if (comment != null)
             {
                 _context.Comments.Remove(comment);
-                await _context.SaveChangesAsync();
             }
         }
 

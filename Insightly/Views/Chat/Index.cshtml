@@ -902,8 +902,26 @@
     const configuration = {
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' }
-        ]
+            { urls: 'stun:stun1.l.google.com:19302' },
+            // Add TURN servers for NAT traversal in production
+            // Free TURN servers (limited reliability - consider paid service for production)
+            { 
+                urls: 'turn:openrelay.metered.ca:80',
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+            },
+            { 
+                urls: 'turn:openrelay.metered.ca:443',
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+            },
+            { 
+                urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+            }
+        ],
+        iceCandidatePoolSize: 10
     };
 
     const connection = new signalR.HubConnectionBuilder()
@@ -937,8 +955,18 @@
 
     // Format time
     function formatTime(date) {
+        if (!date) return 'Just now';
+        
+        // Handle both Date objects and date strings
+        const messageDate = date instanceof Date ? date : new Date(date);
+        
+        // Check if date is valid
+        if (isNaN(messageDate.getTime())) {
+            console.warn('Invalid date:', date);
+            return 'Just now';
+        }
+        
         const now = new Date();
-        const messageDate = new Date(date);
         const diff = now - messageDate;
         const minutes = Math.floor(diff / 60000);
         
@@ -948,6 +976,10 @@
         const hours = Math.floor(minutes / 60);
         if (hours < 24) return `${hours}h ago`;
         
+        const days = Math.floor(hours / 24);
+        if (days < 7) return `${days}d ago`;
+        
+        // For older messages, show formatted date
         return messageDate.toLocaleDateString();
     }
 
@@ -1036,12 +1068,14 @@
     }
 
     // SignalR events
-    connection.on("ReceiveMessage", (sender, message) => {
-        console.log("ReceiveMessage event:", { sender, message, currentChatUserId, currentUserId });
+    connection.on("ReceiveMessage", (sender, message, timestamp) => {
+        console.log("ReceiveMessage event:", { sender, message, timestamp, currentChatUserId, currentUserId });
         
         // Show message if it's from current chat or if you're the sender
         if (sender === currentChatUserId || sender === currentUserId) {
-            addMessage(sender, message);
+            // Use provided timestamp or current time as fallback
+            const messageTimestamp = timestamp ? new Date(timestamp) : new Date();
+            addMessage(sender, message, messageTimestamp);
         }
     });
 
@@ -1056,10 +1090,27 @@
             messages.forEach(msg => {
                 const msgId = msg.senderId || msg.SenderId;
                 const msgText = msg.message || msg.Message;
-                const msgDate = msg.sentAt || msg.SentAt;
+                const msgDateRaw = msg.sentAt || msg.SentAt;
                 
-                console.log("Processing message:", { msgId, msgText, msgDate });
-                addMessage(msgId, msgText, msgDate || new Date());
+                // Parse timestamp - handle both Date objects and ISO strings
+                let msgDate = null;
+                if (msgDateRaw) {
+                    if (msgDateRaw instanceof Date) {
+                        msgDate = msgDateRaw;
+                    } else {
+                        // Try parsing as ISO string (handles UTC timestamps from server)
+                        msgDate = new Date(msgDateRaw);
+                        if (isNaN(msgDate.getTime())) {
+                            console.warn('Invalid date format:', msgDateRaw);
+                            msgDate = new Date(); // Fallback to current time
+                        }
+                    }
+                } else {
+                    msgDate = new Date(); // Fallback if no timestamp
+                }
+                
+                console.log("Processing message:", { msgId, msgText, msgDateRaw, parsedDate: msgDate });
+                addMessage(msgId, msgText, msgDate);
             });
         } else {
             console.log("No messages to display");
@@ -1101,17 +1152,30 @@
         });
     });
 
+    // Check HTTPS requirement for WebRTC
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        console.warn('WebRTC requires HTTPS in production. Calls may not work on HTTP.');
+    }
+
     // Start connection
     connection.start()
         .then(() => {
             console.log("Connected to chat hub");
             console.log("Current user ID:", currentUserId);
         })
-        .catch(err => console.error("Connection error:", err));
+        .catch(err => {
+            console.error("Connection error:", err);
+            alert('Failed to connect to chat service. Please refresh the page.');
+        });
 
     callConnection.start()
-        .then(() => console.log("Connected to call hub"))
-        .catch(err => console.error("Call connection error:", err));
+        .then(() => {
+            console.log("Connected to call hub");
+        })
+        .catch(err => {
+            console.error("Call connection error:", err);
+            alert('Failed to connect to call service. Voice/video calls will not work. Please refresh the page.');
+        });
 
     // ===== WEBRTC CALL FUNCTIONS =====
 
@@ -1146,12 +1210,31 @@
     });
 
     async function startCall(receiverId, withVideo) {
+        // Check if call connection is established
+        if (callConnection.state !== signalR.HubConnectionState.Connected) {
+            throw new Error('Call service not connected. Please refresh the page.');
+        }
+
         // Get media access (audio only or audio+video)
         const constraints = withVideo 
             ? { audio: true, video: true }
             : { audio: true };
         
-        localStream = await navigator.mediaDevices.getUserMedia(constraints);
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (err) {
+            console.error('getUserMedia error:', err);
+            if (err.name === 'NotAllowedError') {
+                throw new Error('Microphone/camera access denied. Please allow access in your browser settings.');
+            } else if (err.name === 'NotFoundError') {
+                throw new Error('No microphone/camera found. Please connect a device.');
+            } else if (err.name === 'NotReadableError') {
+                throw new Error('Microphone/camera is being used by another application.');
+            } else if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                throw new Error('WebRTC requires HTTPS in production. Please use HTTPS to enable calls.');
+            }
+            throw err;
+        }
         
         // Show local video if video call
         if (withVideo) {
@@ -1161,6 +1244,28 @@
         // Create peer connection
         peerConnection = new RTCPeerConnection(configuration);
         
+        // Add connection state monitoring
+        peerConnection.onconnectionstatechange = () => {
+            console.log('Peer connection state:', peerConnection.connectionState);
+            if (peerConnection.connectionState === 'failed') {
+                alert('Connection failed. Please try again.');
+                endCall();
+            } else if (peerConnection.connectionState === 'disconnected') {
+                console.log('Peer connection disconnected');
+            } else if (peerConnection.connectionState === 'connected') {
+                console.log('Peer connection established successfully');
+            }
+        };
+
+        // Add ICE connection state monitoring
+        peerConnection.oniceconnectionstatechange = () => {
+            console.log('ICE connection state:', peerConnection.iceConnectionState);
+            if (peerConnection.iceConnectionState === 'failed') {
+                console.error('ICE connection failed - may need TURN server or check firewall settings');
+                alert('Connection failed. This may be due to network restrictions. Please check your firewall settings.');
+            }
+        };
+        
         // Add local stream tracks
         localStream.getTracks().forEach(track => {
             peerConnection.addTrack(track, localStream);
@@ -1168,6 +1273,7 @@
         
         // Handle incoming tracks
         peerConnection.ontrack = (event) => {
+            console.log('Received remote track:', event.track.kind);
             if (withVideo) {
                 document.getElementById('remoteVideo').srcObject = event.streams[0];
                 document.getElementById('videoCallStatus').textContent = 'Connected';
@@ -1179,20 +1285,29 @@
         // Handle ICE candidates
         peerConnection.onicecandidate = (event) => {
             if (event.candidate) {
-                callConnection.invoke("SendIceCandidate", receiverId, JSON.stringify(event.candidate));
+                callConnection.invoke("SendIceCandidate", receiverId, JSON.stringify(event.candidate))
+                    .catch(err => console.error('Error sending ICE candidate:', err));
+            } else {
+                console.log('No more ICE candidates');
             }
         };
         
         // Create and send offer with video flag
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
-        
-        const offerData = {
-            sdp: JSON.stringify(offer),
-            isVideo: withVideo
-        };
-        
-        await callConnection.invoke("SendOffer", receiverId, JSON.stringify(offerData));
+        try {
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            
+            const offerData = {
+                sdp: JSON.stringify(offer),
+                isVideo: withVideo
+            };
+            
+            await callConnection.invoke("SendOffer", receiverId, JSON.stringify(offerData));
+        } catch (err) {
+            console.error('Error creating/sending offer:', err);
+            endCall();
+            throw err;
+        }
         
         document.getElementById('voiceCallBtn').style.display = 'none';
         document.getElementById('videoCallBtn').style.display = 'none';
@@ -1228,7 +1343,21 @@
                 ? { audio: true, video: true }
                 : { audio: true };
             
-            localStream = await navigator.mediaDevices.getUserMedia(constraints);
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia(constraints);
+            } catch (err) {
+                console.error('getUserMedia error:', err);
+                if (err.name === 'NotAllowedError') {
+                    throw new Error('Microphone/camera access denied. Please allow access in your browser settings.');
+                } else if (err.name === 'NotFoundError') {
+                    throw new Error('No microphone/camera found. Please connect a device.');
+                } else if (err.name === 'NotReadableError') {
+                    throw new Error('Microphone/camera is being used by another application.');
+                } else if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                    throw new Error('WebRTC requires HTTPS in production. Please use HTTPS to enable calls.');
+                }
+                throw err;
+            }
             
             // Show video UI if video call
             if (isVideo) {
@@ -1241,6 +1370,23 @@
             // Create peer connection
             peerConnection = new RTCPeerConnection(configuration);
             
+            // Add connection state monitoring
+            peerConnection.onconnectionstatechange = () => {
+                console.log('Peer connection state:', peerConnection.connectionState);
+                if (peerConnection.connectionState === 'failed') {
+                    alert('Connection failed. Please try again.');
+                    endCall();
+                }
+            };
+
+            // Add ICE connection state monitoring
+            peerConnection.oniceconnectionstatechange = () => {
+                console.log('ICE connection state:', peerConnection.iceConnectionState);
+                if (peerConnection.iceConnectionState === 'failed') {
+                    console.error('ICE connection failed - may need TURN server or check firewall settings');
+                }
+            };
+            
             // Add local stream
             localStream.getTracks().forEach(track => {
                 peerConnection.addTrack(track, localStream);
@@ -1248,6 +1394,7 @@
             
             // Handle incoming tracks
             peerConnection.ontrack = (event) => {
+                console.log('Received remote track:', event.track.kind);
                 if (isVideo) {
                     document.getElementById('remoteVideo').srcObject = event.streams[0];
                 } else {
@@ -1258,17 +1405,24 @@
             // Handle ICE candidates
             peerConnection.onicecandidate = (event) => {
                 if (event.candidate) {
-                    callConnection.invoke("SendIceCandidate", callerId, JSON.stringify(event.candidate));
+                    callConnection.invoke("SendIceCandidate", callerId, JSON.stringify(event.candidate))
+                        .catch(err => console.error('Error sending ICE candidate:', err));
                 }
             };
             
             // Set remote description and create answer
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-            const answer = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answer);
-            
-            // Send answer
-            await callConnection.invoke("SendAnswer", callerId, JSON.stringify(answer));
+            try {
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+                
+                // Send answer
+                await callConnection.invoke("SendAnswer", callerId, JSON.stringify(answer));
+            } catch (err) {
+                console.error('Error creating/sending answer:', err);
+                endCall();
+                throw err;
+            }
             
             if (!isVideo) {
                 showCallStatus('Connected', false);
@@ -1280,21 +1434,34 @@
             hideCallStatus();
         } catch (err) {
             console.error('Error accepting call:', err);
-            alert('Could not accept call');
+            alert(err.message || 'Could not accept call');
+            hideCallStatus();
         }
     });
 
     // Receive answer
     callConnection.on("ReceiveAnswer", async (answerId, answer) => {
-        const answerDesc = JSON.parse(answer);
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(answerDesc));
-        showCallStatus('Connected', false);
+        try {
+            const answerDesc = JSON.parse(answer);
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(answerDesc));
+            showCallStatus('Connected', false);
+        } catch (err) {
+            console.error('Error processing answer:', err);
+        }
     });
 
     // Receive ICE candidate
     callConnection.on("ReceiveIceCandidate", async (senderId, candidate) => {
-        const iceCandidate = JSON.parse(candidate);
-        await peerConnection.addIceCandidate(new RTCIceCandidate(iceCandidate));
+        try {
+            if (!peerConnection) {
+                console.warn('Received ICE candidate but no peer connection exists');
+                return;
+            }
+            const iceCandidate = JSON.parse(candidate);
+            await peerConnection.addIceCandidate(new RTCIceCandidate(iceCandidate));
+        } catch (err) {
+            console.error('Error adding ICE candidate:', err);
+        }
     });
 
     // Decline call

@@ -55,9 +55,8 @@ namespace Insightly.Models
                 await _unitOfWork.Chats.AddMessge(newMessage);
                 await _unitOfWork.SaveChangesAsync();
 
-                // Send via SignalR - now just send the raw data, not the entity
-                await Clients.Caller.SendAsync("ReceiveMessage", senderId, message);
-                await Clients.User(receiverId).SendAsync("ReceiveMessage", senderId, message);
+                await Clients.Caller.SendAsync("ReceiveMessage", senderId, message, newMessage.SentAt.ToString("O"));
+                await Clients.User(receiverId).SendAsync("ReceiveMessage", senderId, message, newMessage.SentAt.ToString("O"));
             }
             catch (Exception ex)
             {

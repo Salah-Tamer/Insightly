@@ -44,6 +44,7 @@ namespace Insightly.Controllers
             };
 
             await _unitOfWork.Comments.AddAsync(comment);
+            await _unitOfWork.SaveChangesAsync();
 
             var isAjax = string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
 
@@ -111,6 +112,7 @@ namespace Insightly.Controllers
 
             int articleId = comment.ArticleId;
             await _unitOfWork.Comments.DeleteAsync(commentId);
+            await _unitOfWork.SaveChangesAsync();
 
             var isAjax = string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
 
@@ -153,6 +155,7 @@ namespace Insightly.Controllers
             comment.Content = content;
             comment.UpdatedAt = DateTime.Now;
             await _unitOfWork.Comments.UpdateAsync(comment);
+            await _unitOfWork.SaveChangesAsync();
 
             var isAjax = string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
 

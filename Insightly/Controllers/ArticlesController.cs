@@ -83,6 +83,7 @@ namespace Insightly.Controllers
                 }
 
                 await _unitOfWork.Articles.AddAsync(article);
+                await _unitOfWork.SaveChangesAsync();
 
                 TempData["SuccessMessage"] = "Article created successfully!";
                 return RedirectToAction("Index", "Home");
@@ -175,6 +176,7 @@ namespace Insightly.Controllers
                     existingArticle.UpdatedAt = DateTime.Now;
 
                     await _unitOfWork.Articles.UpdateAsync(existingArticle);
+                    await _unitOfWork.SaveChangesAsync();
 
                     TempData["SuccessMessage"] = "Article updated successfully!";
                     return RedirectToAction(nameof(Details), new { id = article.ArticleId });
@@ -229,6 +231,7 @@ namespace Insightly.Controllers
             }
 
             await _unitOfWork.Articles.DeleteAsync(id);
+            await _unitOfWork.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Article deleted successfully!";
             return RedirectToAction("Index", "Home");
@@ -265,12 +268,14 @@ namespace Insightly.Controllers
                 };
 
                 await _unitOfWork.ArticleReads.AddAsync(articleRead);
+                await _unitOfWork.SaveChangesAsync();
                 isSaved = true;
                 message = "Article saved!";
             }
             else
             {
                 await _unitOfWork.ArticleReads.DeleteByUserAndArticleAsync(currentUser.Id, id);
+                await _unitOfWork.SaveChangesAsync();
                 isSaved = false;
                 message = "Article unsaved!";
             }

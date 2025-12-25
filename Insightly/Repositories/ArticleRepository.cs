@@ -107,14 +107,12 @@ namespace Insightly.Repositories
         public async Task<Article> AddAsync(Article article)
         {
             _context.Articles.Add(article);
-            await _context.SaveChangesAsync();
             return article;
         }
 
         public async Task<Article> UpdateAsync(Article article)
         {
             _context.Articles.Update(article);
-            await _context.SaveChangesAsync();
             return article;
         }
 
@@ -124,7 +122,6 @@ namespace Insightly.Repositories
             if (article != null)
             {
                 _context.Articles.Remove(article);
-                await _context.SaveChangesAsync();
             }
         }
 

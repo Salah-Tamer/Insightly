@@ -35,14 +35,12 @@ namespace Insightly.Repositories
         public async Task<CommentVote> AddAsync(CommentVote commentVote)
         {
             _context.CommentVotes.Add(commentVote);
-            await _context.SaveChangesAsync();
             return commentVote;
         }
 
         public async Task<CommentVote> UpdateAsync(CommentVote commentVote)
         {
             _context.CommentVotes.Update(commentVote);
-            await _context.SaveChangesAsync();
             return commentVote;
         }
 
@@ -52,7 +50,6 @@ namespace Insightly.Repositories
             if (commentVote != null)
             {
                 _context.CommentVotes.Remove(commentVote);
-                await _context.SaveChangesAsync();
             }
         }
 
@@ -62,7 +59,6 @@ namespace Insightly.Repositories
             if (commentVote != null)
             {
                 _context.CommentVotes.Remove(commentVote);
-                await _context.SaveChangesAsync();
             }
         }
 
