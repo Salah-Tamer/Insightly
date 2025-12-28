@@ -9,12 +9,12 @@ namespace Insightly.Controllers
     [Authorize]
     public class FollowController : Controller
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IFollowRepository _followRepository;
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public FollowController(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
+        public FollowController(IFollowRepository followRepository, UserManager<ApplicationUser> userManager)
         {
-            _unitOfWork = unitOfWork;
+            _followRepository = followRepository;
             _userManager = userManager;
         }
 
@@ -30,7 +30,7 @@ namespace Insightly.Controllers
                 return RedirectToAction("ViewProfile", "Profile", new { id = userId });
             }
 
-            var alreadyFollowing = await _unitOfWork.Follows.ExistsAsync(currentUser.Id, userId);
+            var alreadyFollowing = await _followRepository.ExistsAsync(currentUser.Id, userId);
 
             if (!alreadyFollowing)
             {
@@ -40,8 +40,7 @@ namespace Insightly.Controllers
                     FollowingId = userId
                 };
 
-                await _unitOfWork.Follows.AddAsync(follow);
-                await _unitOfWork.SaveChangesAsync();
+                await _followRepository.AddAsync(follow);
             }
 
             return RedirectToAction("ViewProfile", "Profile", new { id = userId });
@@ -53,8 +52,7 @@ namespace Insightly.Controllers
             var currentUser = await _userManager.GetUserAsync(User);
             if (currentUser == null) return Unauthorized();
 
-            await _unitOfWork.Follows.DeleteByFollowerAndFollowingAsync(currentUser.Id, userId);
-            await _unitOfWork.SaveChangesAsync();
+            await _followRepository.DeleteByFollowerAndFollowingAsync(currentUser.Id, userId);
 
             return RedirectToAction("ViewProfile", "Profile", new { id = userId });
         }

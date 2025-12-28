@@ -8,12 +8,12 @@ namespace Insightly.Models
     [Authorize]
     public class ChatHub : Hub
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IChatRepository _chatRepository;
         private readonly ILogger<ChatHub> _logger;
 
-        public ChatHub(IUnitOfWork unitOfWork, ILogger<ChatHub> logger)
+        public ChatHub(IChatRepository chatRepository, ILogger<ChatHub> logger)
         {
-            _unitOfWork = unitOfWork;
+            _chatRepository = chatRepository;
             _logger = logger;
         }
 
@@ -29,7 +29,7 @@ namespace Insightly.Models
                     return;
                 }
 
-                var chat = await _unitOfWork.Chats.GetChatBetweenUsers(senderId, receiverId);
+                var chat = await _chatRepository.GetChatBetweenUsers(senderId, receiverId);
 
                 if (chat == null)
                 {
@@ -39,8 +39,7 @@ namespace Insightly.Models
                         OtherUserId = receiverId,
                         Messages = new List<ChatMessage>()
                     };
-                    await _unitOfWork.Chats.AddChat(chat);
-                    await _unitOfWork.SaveChangesAsync();
+                    await _chatRepository.AddChat(chat);
                 }
 
                 var newMessage = new ChatMessage
@@ -52,8 +51,7 @@ namespace Insightly.Models
                     ChatId = chat.Id
                 };
 
-                await _unitOfWork.Chats.AddMessge(newMessage);
-                await _unitOfWork.SaveChangesAsync();
+                await _chatRepository.AddMessge(newMessage);
 
                 await Clients.Caller.SendAsync("ReceiveMessage", senderId, message, newMessage.SentAt.ToString("O"));
                 await Clients.User(receiverId).SendAsync("ReceiveMessage", senderId, message, newMessage.SentAt.ToString("O"));
@@ -77,7 +75,7 @@ namespace Insightly.Models
                     return;
                 }
 
-                var messages = await _unitOfWork.Chats.GetAllMessages(userId, otherUserId);
+                var messages = await _chatRepository.GetAllMessages(userId, otherUserId);
                 var messageList = messages?.ToList() ?? new List<MessageViewModel>();
 
                 _logger.LogInformation($"Loading {messageList.Count} messages for chat between {userId} and {otherUserId}");

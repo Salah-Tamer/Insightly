@@ -4,6 +4,7 @@ namespace Insightly.Services
     {
         Task<(bool IsValid, string? ErrorMessage)> ValidateImageAsync(IFormFile? file, long maxBytes = 5 * 1024 * 1024);
         Task<string?> UploadArticleImageAsync(IFormFile? file);
+        Task<string?> UploadProfilePictureAsync(IFormFile? file, string userId);
     }
 }
 

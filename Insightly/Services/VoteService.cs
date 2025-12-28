@@ -5,72 +5,116 @@ namespace Insightly.Services
 {
     public class VoteService : IVoteService
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IArticleRepository _articleRepository;
+        private readonly ICommentRepository _commentRepository;
+        private readonly IVoteRepository _voteRepository;
+        private readonly ICommentVoteRepository _commentVoteRepository;
 
-        public VoteService(IUnitOfWork unitOfWork)
+        public VoteService(
+            IArticleRepository articleRepository,
+            ICommentRepository commentRepository,
+            IVoteRepository voteRepository,
+            ICommentVoteRepository commentVoteRepository)
         {
-            _unitOfWork = unitOfWork;
+            _articleRepository = articleRepository;
+            _commentRepository = commentRepository;
+            _voteRepository = voteRepository;
+            _commentVoteRepository = commentVoteRepository;
         }
 
         public async Task<(bool Success, bool Removed, string Message)> ToggleArticleVoteAsync(int articleId, string userId, bool isUpvote)
         {
-            var article = await _unitOfWork.Articles.GetByIdAsync(articleId);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return (false, false, "User information is missing.");
+            }
+
+            if (articleId <= 0)
+            {
+                return (false, false, "Invalid article ID.");
+            }
+
+            var article = await _articleRepository.GetByIdAsync(articleId);
             if (article == null)
             {
-                return (false, false, "Article not found");
+                return (false, false, "Article not found.");
+            }
+
+            if (article.AuthorId == userId)
+            {
+                return (false, false, "You cannot vote on your own article.");
             }
 
             bool removed = false;
-            var existingVote = await _unitOfWork.Votes.GetByUserAndArticleAsync(userId, articleId);
+            var existingVote = await _voteRepository.GetByUserAndArticleAsync(userId, articleId);
 
             if (existingVote != null)
             {
                 if (existingVote.IsUpvote == isUpvote)
                 {
                     // Remove vote if clicking the same vote type
-                    await _unitOfWork.Votes.DeleteByUserAndArticleAsync(userId, articleId);
+                    await _voteRepository.DeleteByUserAndArticleAsync(userId, articleId);
                     removed = true;
                 }
                 else
                 {
                     // Change vote type (upvote to downvote or vice versa)
                     existingVote.IsUpvote = isUpvote;
-                    await _unitOfWork.Votes.UpdateAsync(existingVote);
+                    await _voteRepository.UpdateAsync(existingVote);
                 }
             }
             else
             {
-                // Create new vote
                 var vote = new Vote
                 {
                     ArticleId = articleId,
                     UserId = userId,
                     IsUpvote = isUpvote
                 };
-                await _unitOfWork.Votes.AddAsync(vote);
+                await _voteRepository.AddAsync(vote);
             }
 
-            await _unitOfWork.SaveChangesAsync();
-
-            return (true, removed, removed ? "Vote removed!" : "Vote saved!");
+            var voteType = isUpvote ? "upvote" : "downvote";
+            return (true, removed, removed ? "Vote removed successfully!" : $"Article {voteType}d successfully!");
         }
 
         public async Task<(bool Success, bool Removed, string Message)> ToggleCommentVoteAsync(int commentId, string userId, bool isUpvote)
         {
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return (false, false, "User information is missing.");
+            }
+
+            if (commentId <= 0)
+            {
+                return (false, false, "Invalid comment ID.");
+            }
+
+            var comment = await _commentRepository.GetByIdAsync(commentId);
+            if (comment == null)
+            {
+                return (false, false, "Comment not found.");
+            }
+
+            if (comment.AuthorId == userId)
+            {
+                return (false, false, "You cannot vote on your own comment.");
+            }
+
             bool removed = false;
-            var existingVote = await _unitOfWork.CommentVotes.GetByUserAndCommentAsync(userId, commentId);
+            var existingVote = await _commentVoteRepository.GetByUserAndCommentAsync(userId, commentId);
 
             if (existingVote != null)
             {
                 if (existingVote.IsUpvote == isUpvote)
                 {
-                    await _unitOfWork.CommentVotes.DeleteByUserAndCommentAsync(userId, commentId);
+                    await _commentVoteRepository.DeleteByUserAndCommentAsync(userId, commentId);
                     removed = true;
                 }
                 else
                 {
                     existingVote.IsUpvote = isUpvote;
-                    await _unitOfWork.CommentVotes.UpdateAsync(existingVote);
+                    await _commentVoteRepository.UpdateAsync(existingVote);
                 }
             }
             else
@@ -81,27 +125,26 @@ namespace Insightly.Services
                     UserId = userId,
                     IsUpvote = isUpvote
                 };
-                await _unitOfWork.CommentVotes.AddAsync(vote);
+                await _commentVoteRepository.AddAsync(vote);
             }
 
-            await _unitOfWork.SaveChangesAsync();
-
-            return (true, removed, removed ? "Vote removed!" : "Vote saved!");
+            var voteType = isUpvote ? "upvote" : "downvote";
+            return (true, removed, removed ? "Vote removed successfully!" : $"Comment {voteType}d successfully!");
         }
 
         public async Task<int> GetArticleNetScoreAsync(int articleId)
         {
-            return await _unitOfWork.Votes.GetNetScoreAsync(articleId);
+            return await _voteRepository.GetNetScoreAsync(articleId);
         }
 
         public async Task<int> GetCommentNetScoreAsync(int commentId)
         {
-            return await _unitOfWork.CommentVotes.GetNetScoreAsync(commentId);
+            return await _commentVoteRepository.GetNetScoreAsync(commentId);
         }
 
         public async Task<(bool Voted, bool? IsUpvote)> GetUserArticleVoteAsync(int articleId, string userId)
         {
-            var vote = await _unitOfWork.Votes.GetByUserAndArticleAsync(userId, articleId);
+            var vote = await _voteRepository.GetByUserAndArticleAsync(userId, articleId);
             if (vote == null)
             {
                 return (false, null);
@@ -111,7 +154,7 @@ namespace Insightly.Services
 
         public async Task<(bool Voted, bool? IsUpvote)> GetUserCommentVoteAsync(int commentId, string userId)
         {
-            var vote = await _unitOfWork.CommentVotes.GetByUserAndCommentAsync(userId, commentId);
+            var vote = await _commentVoteRepository.GetByUserAndCommentAsync(userId, commentId);
             if (vote == null)
             {
                 return (false, null);

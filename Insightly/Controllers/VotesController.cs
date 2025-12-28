@@ -11,13 +11,13 @@ namespace Insightly.Controllers
     [Authorize]
     public class VotesController : Controller
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly ICommentRepository _commentRepository;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IVoteService _voteService;
 
-        public VotesController(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IVoteService voteService)
+        public VotesController(ICommentRepository commentRepository, UserManager<ApplicationUser> userManager, IVoteService voteService)
         {
-            _unitOfWork = unitOfWork;
+            _commentRepository = commentRepository;
             _userManager = userManager;
             _voteService = voteService;
         }
@@ -133,7 +133,7 @@ namespace Insightly.Controllers
 
         private async Task<int> GetArticleIdFromComment(int commentId)
         {
-            var comment = await _unitOfWork.Comments.GetByIdAsync(commentId);
+            var comment = await _commentRepository.GetByIdAsync(commentId);
             return comment?.ArticleId ?? 0;
         }
     }

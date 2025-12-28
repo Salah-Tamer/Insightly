@@ -29,7 +29,6 @@ builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddSignalR();
 
 // Register repository services
-builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IArticleRepository, ArticleRepository>();
 builder.Services.AddScoped<ICommentRepository, CommentRepository>();
 builder.Services.AddScoped<IVoteRepository, VoteRepository>();
@@ -43,6 +42,8 @@ builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 builder.Services.AddScoped<IArticleService, ArticleService>();
 builder.Services.AddScoped<IVoteService, VoteService>();
 builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<IProfileService, ProfileService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
 
 // Configure SMTP settings
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));

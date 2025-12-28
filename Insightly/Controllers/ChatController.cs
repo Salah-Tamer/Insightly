@@ -14,14 +14,12 @@ namespace Insightly.Controllers
     [Authorize]
     public class ChatController : Controller
     {
-        private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IChatService _chatService;
         private readonly IMapper _mapper;
 
-        public ChatController(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IChatService chatService, IMapper mapper)
+        public ChatController(UserManager<ApplicationUser> userManager, IChatService chatService, IMapper mapper)
         {
-            _unitOfWork = unitOfWork;
             _userManager = userManager;
             _chatService = chatService;
             _mapper = mapper;

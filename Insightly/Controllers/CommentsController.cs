@@ -10,13 +10,13 @@ namespace Insightly.Controllers
 {
     public class CommentsController : Controller
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly ICommentRepository _commentRepository;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IMapper _mapper;
 
-        public CommentsController(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IMapper mapper)
+        public CommentsController(ICommentRepository commentRepository, UserManager<ApplicationUser> userManager, IMapper mapper)
         {
-            _unitOfWork = unitOfWork;
+            _commentRepository = commentRepository;
             _userManager = userManager;
             _mapper = mapper;
         }
@@ -47,10 +47,9 @@ namespace Insightly.Controllers
                 UpdatedAt = null
             };
 
-            await _unitOfWork.Comments.AddAsync(comment);
-            await _unitOfWork.SaveChangesAsync();
+            await _commentRepository.AddAsync(comment);
 
-            var commentWithAuthor = await _unitOfWork.Comments.GetByIdWithAuthorAsync(comment.CommentId);
+            var commentWithAuthor = await _commentRepository.GetByIdWithAuthorAsync(comment.CommentId);
             if (commentWithAuthor == null)
             {
                 return BadRequest(new { message = "Failed to retrieve comment" });
@@ -72,7 +71,7 @@ namespace Insightly.Controllers
         [HttpGet]
         public async Task<IActionResult> List(int articleId)
         {
-            var comments = await _unitOfWork.Comments.GetByArticleIdAsync(articleId);
+            var comments = await _commentRepository.GetByArticleIdAsync(articleId);
             var commentDtos = _mapper.Map<List<CommentJsonDto>>(comments);
 
             return Json(commentDtos);
@@ -82,7 +81,7 @@ namespace Insightly.Controllers
         [Authorize]
         public async Task<IActionResult> Delete(int commentId)
         {
-            var comment = await _unitOfWork.Comments.GetByIdWithAuthorAsync(commentId);
+            var comment = await _commentRepository.GetByIdWithAuthorAsync(commentId);
             if (comment == null)
             {
                 return NotFound(new { message = "Comment not found" });
@@ -102,8 +101,7 @@ namespace Insightly.Controllers
             }
 
             int articleId = comment.ArticleId;
-            await _unitOfWork.Comments.DeleteAsync(commentId);
-            await _unitOfWork.SaveChangesAsync();
+            await _commentRepository.DeleteAsync(commentId);
 
             var isAjax = string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
 
@@ -126,7 +124,7 @@ namespace Insightly.Controllers
                 return BadRequest(new { message = "Comment cannot be empty" });
             }
 
-            var comment = await _unitOfWork.Comments.GetByIdWithAuthorAsync(commentId);
+            var comment = await _commentRepository.GetByIdWithAuthorAsync(commentId);
             if (comment == null)
             {
                 return NotFound(new { message = "Comment not found" });
@@ -145,8 +143,7 @@ namespace Insightly.Controllers
 
             comment.Content = content;
             comment.UpdatedAt = DateTime.Now;
-            await _unitOfWork.Comments.UpdateAsync(comment);
-            await _unitOfWork.SaveChangesAsync();
+            await _commentRepository.UpdateAsync(comment);
 
             var isAjax = string.Equals(Request.Headers["X-Requested-With"].ToString(), "XMLHttpRequest", StringComparison.OrdinalIgnoreCase);
 

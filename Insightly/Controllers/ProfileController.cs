@@ -1,6 +1,4 @@
-using AutoMapper;
 using Insightly.Models;
-using Insightly.Repositories;
 using Insightly.Services;
 using Insightly.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -14,14 +12,12 @@ namespace Insightly.Controllers
     public class ProfileController : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly IMapper _mapper;
+        private readonly IProfileService _profileService;
 
-        public ProfileController(UserManager<ApplicationUser> userManager, IUnitOfWork unitOfWork, IMapper mapper)
+        public ProfileController(UserManager<ApplicationUser> userManager, IProfileService profileService)
         {
             _userManager = userManager;
-            _unitOfWork = unitOfWork;
-            _mapper = mapper;
+            _profileService = profileService;
         }
 
         public async Task<IActionResult> Index()
@@ -31,26 +27,18 @@ namespace Insightly.Controllers
             {
                 return NotFound();
             }
+
+            var (profile, articles, followersCount, followingCount) = await _profileService.GetProfileWithDetailsAsync(userId);
             
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
+            if (profile == null)
             {
                 return NotFound();
             }
 
-            // Get user's articles
-            var articles = await _unitOfWork.Articles.GetByAuthorIdAsync(userId);
-            var followersCount = await _unitOfWork.Follows.GetFollowersCountAsync(user.Id);
-            var followingCount = await _unitOfWork.Follows.GetFollowingCountAsync(user.Id);
-
-            // Map to ViewModels using AutoMapper
-            var articleViewModels = _mapper.Map<List<ArticleListItemViewModel>>(articles);
-            var profileViewModel = _mapper.Map<ProfileViewModel>(user);
-
-            ViewBag.Articles = articleViewModels;
+            ViewBag.Articles = articles;
             ViewBag.FollowersCount = followersCount;
             ViewBag.FollowingCount = followingCount;
-            return View(profileViewModel);
+            return View(profile);
         }
 
         public async Task<IActionResult> Edit()
@@ -93,109 +81,37 @@ namespace Insightly.Controllers
             {
                 return NotFound();
             }
+
+            var (success, errorMessage) = await _profileService.UpdateProfileAsync(userId, model);
             
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
+            if (!success)
             {
-                return NotFound();
+                ModelState.AddModelError(string.Empty, errorMessage ?? "Failed to update profile.");
+                return View(model);
             }
 
-            try
-            {
-                // Update only the profile fields
-                user.Name = model.Name;
-                user.Bio = model.Bio;
-
-                // Handle profile picture upload
-                if (model.ProfilePictureFile != null && model.ProfilePictureFile.Length > 0)
-                {
-                    // Validate file type
-                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
-                    var fileExtension = Path.GetExtension(model.ProfilePictureFile.FileName).ToLowerInvariant();
-                    
-                    if (!allowedExtensions.Contains(fileExtension))
-                    {
-                        ModelState.AddModelError(nameof(model.ProfilePictureFile), "Only JPG, JPEG, PNG, and GIF files are allowed.");
-                        return View(model);
-                    }
-
-                    // Validate file size (5MB max)
-                    if (model.ProfilePictureFile.Length > 5 * 1024 * 1024)
-                    {
-                        ModelState.AddModelError(nameof(model.ProfilePictureFile), "File size must be less than 5MB.");
-                        return View(model);
-                    }
-
-                    // Generate unique filename
-                    var fileName = $"{userId}_{DateTime.Now:yyyyMMddHHmmss}{fileExtension}";
-                    var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "profiles");
-                    
-                    // Ensure directory exists
-                    Directory.CreateDirectory(uploadsPath);
-                    
-                    var filePath = Path.Combine(uploadsPath, fileName);
-                    
-                    // Save file
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await model.ProfilePictureFile.CopyToAsync(stream);
-                    }
-                    
-                    // Update profile picture path
-                    user.ProfilePicture = $"/uploads/profiles/{fileName}";
-                }
-
-                var result = await _userManager.UpdateAsync(user);
-                
-                if (result.Succeeded)
-                {
-                    TempData["SuccessMessage"] = "Profile updated successfully!";
-                    return RedirectToAction(nameof(Index));
-                }
-
-                foreach (var error in result.Errors)
-                {
-                    ModelState.AddModelError(string.Empty, error.Description);
-                }
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError(string.Empty, $"An error occurred while updating your profile: {ex.Message}");
-            }
-
-            return View(model);
+            TempData["SuccessMessage"] = "Profile updated successfully!";
+            return RedirectToAction(nameof(Index));
         }
         public async Task<IActionResult> ViewProfile(string id)
         {
-            var user = await _userManager.FindByIdAsync(id);
+            var currentUser = await _userManager.GetUserAsync(User);
+            var currentUserId = currentUser?.Id;
 
-            if (user == null)
+            var (profile, articles, followersCount, followingCount, isFollowing) = 
+                await _profileService.GetProfileWithDetailsAsync(id, currentUserId);
+
+            if (profile == null)
             {
                 return NotFound();
             }
 
-            var articles = await _unitOfWork.Articles.GetByAuthorIdAsync(id);
-            var followersCount = await _unitOfWork.Follows.GetFollowersCountAsync(id);
-            var followingCount = await _unitOfWork.Follows.GetFollowingCountAsync(id);
-
-            var currentUser = await _userManager.GetUserAsync(User);
-            var isFollowing = false;
-
-            if (currentUser != null)
-            {
-                isFollowing = await _unitOfWork.Follows.ExistsAsync(currentUser.Id, id);
-            }
-
-            // Map to ViewModels using AutoMapper
-            var articleViewModels = _mapper.Map<List<ArticleListItemViewModel>>(articles);
-            var profileViewModel = _mapper.Map<ProfileViewModel>(user);
-
-            ViewBag.Articles = articleViewModels;
+            ViewBag.Articles = articles;
             ViewBag.FollowersCount = followersCount;
             ViewBag.FollowingCount = followingCount;
             ViewBag.IsFollowing = isFollowing;
 
-            return View(profileViewModel);
+            return View(profile);
         }
 
 

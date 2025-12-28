@@ -50,6 +50,31 @@ namespace Insightly.Services
 
             return $"/uploads/articles/{safeFileName}";
         }
+
+        public async Task<string?> UploadProfilePictureAsync(IFormFile? file, string userId)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return null;
+            }
+
+            var uploadsRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "profiles");
+            if (!Directory.Exists(uploadsRoot))
+            {
+                Directory.CreateDirectory(uploadsRoot);
+            }
+
+            var fileExtension = Path.GetExtension(file.FileName);
+            var safeFileName = $"{userId}_{DateTime.Now:yyyyMMddHHmmss}{fileExtension}";
+            var filePath = Path.Combine(uploadsRoot, safeFileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            return $"/uploads/profiles/{safeFileName}";
+        }
     }
 }
 

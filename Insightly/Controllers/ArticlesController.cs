@@ -11,15 +11,29 @@ namespace Insightly.Controllers
 {
     public class ArticlesController : Controller
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IArticleRepository _articleRepository;
+        private readonly IArticleReadRepository _articleReadRepository;
+        private readonly IVoteRepository _voteRepository;
+        private readonly ICommentRepository _commentRepository;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IArticleService _articleService;
         private readonly IFileUploadService _fileUploadService;
         private readonly IMapper _mapper;
 
-        public ArticlesController(IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IArticleService articleService, IFileUploadService fileUploadService, IMapper mapper)
+        public ArticlesController(
+            IArticleRepository articleRepository,
+            IArticleReadRepository articleReadRepository,
+            IVoteRepository voteRepository,
+            ICommentRepository commentRepository,
+            UserManager<ApplicationUser> userManager, 
+            IArticleService articleService, 
+            IFileUploadService fileUploadService, 
+            IMapper mapper)
         {
-            _unitOfWork = unitOfWork;
+            _articleRepository = articleRepository;
+            _articleReadRepository = articleReadRepository;
+            _voteRepository = voteRepository;
+            _commentRepository = commentRepository;
             _userManager = userManager;
             _articleService = articleService;
             _fileUploadService = fileUploadService;
@@ -85,15 +99,15 @@ namespace Insightly.Controllers
                 return NotFound();
             }
 
-            var netScore = await _unitOfWork.Votes.GetNetScoreAsync(id);
-            var commentsCount = await _unitOfWork.Comments.GetCountByArticleAsync(id);
+            var netScore = await _voteRepository.GetNetScoreAsync(id);
+            var commentsCount = await _commentRepository.GetCountByArticleAsync(id);
 
             ViewBag.NetScore = netScore;
             ViewBag.CommentsCount = commentsCount;
 
             if (currentUser != null)
             {
-                var isRead = await _unitOfWork.ArticleReads.ExistsAsync(currentUser.Id, id);
+                var isRead = await _articleReadRepository.ExistsAsync(currentUser.Id, id);
                 ViewBag.IsRead = isRead;
             }
             else
@@ -101,7 +115,6 @@ namespace Insightly.Controllers
                 ViewBag.IsRead = false;
             }
 
-            // Map Article entity to ArticleDetailsViewModel using AutoMapper
             var viewModel = _mapper.Map<ArticleDetailsViewModel>(article);
 
             return View(viewModel);
@@ -109,7 +122,7 @@ namespace Insightly.Controllers
         [Authorize]
         public async Task<IActionResult> Edit(int id)
         {
-            var article = await _unitOfWork.Articles.GetByIdAsync(id);
+            var article = await _articleRepository.GetByIdAsync(id);
             if (article == null)
             {
                 return NotFound();
@@ -126,7 +139,6 @@ namespace Insightly.Controllers
                 return Forbid();
             }
 
-            // Map Article entity to ArticleEditViewModel using AutoMapper
             var viewModel = _mapper.Map<ArticleEditViewModel>(article);
 
             return View(viewModel);
@@ -138,7 +150,7 @@ namespace Insightly.Controllers
         {
             if (id != viewModel.ArticleId) return NotFound();
 
-            var existingArticle = await _unitOfWork.Articles.GetByIdAsync(id);
+            var existingArticle = await _articleRepository.GetByIdAsync(id);
             if (existingArticle == null) return NotFound();
 
             var user = await _userManager.GetUserAsync(User);
@@ -173,7 +185,7 @@ namespace Insightly.Controllers
         [Authorize]
         public async Task<IActionResult> Delete(int id)
         {
-            var article = await _unitOfWork.Articles.GetByIdWithAuthorAsync(id);
+            var article = await _articleRepository.GetByIdWithAuthorAsync(id);
 
             if (article == null) return NotFound();
 
@@ -189,7 +201,6 @@ namespace Insightly.Controllers
                 return Forbid();
             }
 
-            // Map Article entity to ArticleDetailsViewModel using AutoMapper
             var viewModel = _mapper.Map<ArticleDetailsViewModel>(article);
 
             return View(viewModel);
@@ -200,7 +211,7 @@ namespace Insightly.Controllers
         [Authorize]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var article = await _unitOfWork.Articles.GetByIdAsync(id);
+            var article = await _articleRepository.GetByIdAsync(id);
             if (article == null) return NotFound();
 
             var user = await _userManager.GetUserAsync(User);
@@ -263,7 +274,7 @@ namespace Insightly.Controllers
                 return Unauthorized();
             }
 
-            var readArticles = await _unitOfWork.ArticleReads.GetByUserIdAsync(currentUser.Id);
+            var readArticles = await _articleReadRepository.GetByUserIdAsync(currentUser.Id);
             var viewModels = readArticles.Select(ar => new SavedArticleViewModel
             {
                 Article = _mapper.Map<ArticleListItemViewModel>(ar.Article),
@@ -282,7 +293,7 @@ namespace Insightly.Controllers
                 return Unauthorized();
             }
 
-            var myArticles = await _unitOfWork.Articles.GetByAuthorIdAsync(currentUser.Id);
+            var myArticles = await _articleRepository.GetByAuthorIdAsync(currentUser.Id);
             var viewModels = _mapper.Map<List<ArticleListItemViewModel>>(myArticles);
 
             return View(viewModels);
@@ -297,7 +308,7 @@ namespace Insightly.Controllers
                 return Unauthorized();
             }
 
-            var followingArticles = await _unitOfWork.Articles.GetByFollowingUsersAsync(currentUser.Id);
+            var followingArticles = await _articleRepository.GetByFollowingUsersAsync(currentUser.Id);
             var viewModels = _mapper.Map<List<ArticleListItemViewModel>>(followingArticles);
 
             return View(viewModels);
