@@ -17,10 +17,8 @@ namespace Insightly.Mappings
 
             // Chat to ChatViewModel
             CreateMap<Chat, ChatViewModel>()
-                .ForMember(dest => dest.OtherUserName, opt => opt.MapFrom(src => 
-                    src.OtherUser != null ? src.OtherUser.Name : string.Empty))
-                .ForMember(dest => dest.OtherUserProfilePicture, opt => opt.MapFrom(src => 
-                    src.OtherUser != null ? src.OtherUser.ProfilePicture : null))
+                .ForMember(dest => dest.User, opt => opt.MapFrom(src => src.User))
+                .ForMember(dest => dest.OtherUser, opt => opt.MapFrom(src => src.OtherUser))
                 .ForMember(dest => dest.Messages, opt => opt.MapFrom(src => 
                     src.Messages != null ? src.Messages : new List<ChatMessage>()));
 

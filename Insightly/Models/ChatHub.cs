@@ -1,6 +1,7 @@
-﻿using Insightly.Repositories;
+using Insightly.Repositories;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using Insightly.ViewModels;
 
 namespace Insightly.Models
@@ -33,13 +34,25 @@ namespace Insightly.Models
 
                 if (chat == null)
                 {
-                    chat = new Chat
+                    try
                     {
-                        UserId = senderId,
-                        OtherUserId = receiverId,
-                        Messages = new List<ChatMessage>()
-                    };
-                    await _chatRepository.AddChat(chat);
+                        chat = new Chat
+                        {
+                            UserId = senderId,
+                            OtherUserId = receiverId,
+                            Messages = new List<ChatMessage>()
+                        };
+                        await _chatRepository.AddChat(chat);
+                    }
+                    catch (DbUpdateException)
+                    {
+                        chat = await _chatRepository.GetChatBetweenUsers(senderId, receiverId);
+                        if (chat == null)
+                        {
+                            _logger.LogError("Failed to create or retrieve chat between {SenderId} and {ReceiverId}", senderId, receiverId);
+                            return;
+                        }
+                    }
                 }
 
                 var newMessage = new ChatMessage
