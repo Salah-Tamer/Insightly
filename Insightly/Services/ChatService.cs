@@ -14,11 +14,11 @@ namespace Insightly.Services
             _followRepository = followRepository;
         }
 
-        public async Task<(IEnumerable<Chat> Chats, IEnumerable<ApplicationUser> Followers, IEnumerable<ApplicationUser> Following)> GetUserChatDataAsync(string userId)
+        public async Task<(IEnumerable<Chat> Chats, IEnumerable<Follow> Followers, IEnumerable<Follow> Following)> GetUserChatDataAsync(string userId)
         {
             if (string.IsNullOrWhiteSpace(userId))
             {
-                return (Enumerable.Empty<Chat>(), Enumerable.Empty<ApplicationUser>(), Enumerable.Empty<ApplicationUser>());
+                return (Enumerable.Empty<Chat>(), Enumerable.Empty<Follow>(), Enumerable.Empty<Follow>());
             }
 
             var chats = await _chatRepository.GetChats(userId);
@@ -26,8 +26,8 @@ namespace Insightly.Services
             var following = await _followRepository.GetFollowingAsync(userId);
 
             var validChats = chats.Where(c => c != null && c.User != null && c.OtherUser != null);
-            var validFollowers = followers.Where(f => f != null);
-            var validFollowing = following.Where(f => f != null);
+            var validFollowers = followers.Where(f => f != null && f.Follower != null);
+            var validFollowing = following.Where(f => f != null && f.Following != null);
 
             return (validChats, validFollowers, validFollowing);
         }
