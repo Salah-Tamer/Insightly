@@ -1,5 +1,4 @@
 using Insightly.Models;
-using Insightly.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
 namespace Insightly.Repositories
@@ -22,7 +21,7 @@ namespace Insightly.Repositories
            .ToListAsync();
             return chats;
         }
-        public async Task<IEnumerable<MessageViewModel>> GetAllMessages(string SenderId, string ReceiverId)
+        public async Task<IEnumerable<ChatMessage>> GetAllMessages(string SenderId, string ReceiverId)
         {
             var chat = await context.Chats
                 .Include(m => m.Messages)
@@ -32,19 +31,10 @@ namespace Insightly.Repositories
 
             if (chat == null || chat.Messages == null)
             {
-                return Enumerable.Empty<MessageViewModel>();
+                return Enumerable.Empty<ChatMessage>();
             }
 
-            
-            return chat.Messages
-                .OrderBy(m => m.SentAt)
-                .Select(m => new MessageViewModel
-                {
-                    SenderId = m.SenderId,
-                    Message = m.Message,
-                    SentAt = m.SentAt
-                })
-                .ToList();
+            return chat.Messages.OrderBy(m => m.SentAt).ToList();
         }
         public async Task AddMessge(ChatMessage chatMessage)
         {

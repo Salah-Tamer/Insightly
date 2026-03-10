@@ -1,8 +1,9 @@
+using AutoMapper;
 using Insightly.Repositories;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
 using Insightly.ViewModels;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Insightly.Models
 {
@@ -10,11 +11,13 @@ namespace Insightly.Models
     public class ChatHub : Hub
     {
         private readonly IChatRepository _chatRepository;
+        private readonly IMapper _mapper;
         private readonly ILogger<ChatHub> _logger;
 
-        public ChatHub(IChatRepository chatRepository, ILogger<ChatHub> logger)
+        public ChatHub(IChatRepository chatRepository, IMapper mapper, ILogger<ChatHub> logger)
         {
             _chatRepository = chatRepository;
+            _mapper = mapper;
             _logger = logger;
         }
 
@@ -89,11 +92,10 @@ namespace Insightly.Models
                 }
 
                 var messages = await _chatRepository.GetAllMessages(userId, otherUserId);
-                var messageList = messages?.ToList() ?? new List<MessageViewModel>();
+                var messageList = _mapper.Map<List<MessageViewModel>>(messages ?? Enumerable.Empty<Insightly.Models.ChatMessage>());
 
                 _logger.LogInformation($"Loading {messageList.Count} messages for chat between {userId} and {otherUserId}");
 
-                // Now sending DTOs instead of entities - no more circular reference!
                 await Clients.Caller.SendAsync("LoadChatHistory", messageList);
             }
             catch (Exception ex)
