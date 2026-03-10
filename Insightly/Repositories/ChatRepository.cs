@@ -1,4 +1,4 @@
-﻿using Insightly.Models;
+using Insightly.Models;
 using Insightly.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
@@ -49,7 +49,7 @@ namespace Insightly.Repositories
         public async Task AddMessge(ChatMessage chatMessage)
         {
             await context.ChatMessages.AddAsync(chatMessage);
-
+            await context.SaveChangesAsync();
         }
         public async Task<Chat?> GetChatBetweenUsers(string userId, string otherUserId)
         {
@@ -62,6 +62,7 @@ namespace Insightly.Repositories
         public async Task AddChat(Chat chat)
         {
             await context.Chats.AddAsync(chat);
+            await context.SaveChangesAsync();
         }
 
     }
