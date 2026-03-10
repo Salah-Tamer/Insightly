@@ -1,4 +1,4 @@
-﻿@model IEnumerable<Insightly.ViewModels.ChatViewModel>
+@model IEnumerable<Insightly.ViewModels.ChatViewModel>
 @{
     ViewData["Title"] = "Messages";
     var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -1058,16 +1058,38 @@
     // Send message
     function sendMessage() {
         const message = messageInput.value.trim();
-        
-        if (message && currentChatUserId) {
-            console.log("Sending message:", message, "to:", currentChatUserId);
-            connection.invoke("SendPrivateMessage", currentChatUserId, message)
-                .catch(err => console.error("Send error:", err));
-            messageInput.value = "";
+
+        if (!message) return;
+        if (!currentChatUserId) return;
+        if (message.length > 2000) {
+            showMessageError(`Message is too long (${message.length}/2000 characters).`);
+            return;
         }
+
+        connection.invoke("SendPrivateMessage", currentChatUserId, message)
+            .catch(err => console.error("Send error:", err));
+        messageInput.value = "";
+    }
+
+    function showMessageError(text) {
+        const existing = document.getElementById('messageErrorBanner');
+        if (existing) existing.remove();
+
+        const banner = document.createElement('div');
+        banner.id = 'messageErrorBanner';
+        banner.style.cssText = 'background:#fff0f0;color:#c0392b;border:1px solid #e74c3c;border-radius:6px;padding:8px 14px;font-size:13px;margin:0 28px 8px;';
+        banner.textContent = text;
+
+        const inputContainer = document.getElementById('chatInput');
+        inputContainer.parentNode.insertBefore(banner, inputContainer);
+        setTimeout(() => banner.remove(), 4000);
     }
 
     // SignalR events
+    connection.on("MessageError", (errorText) => {
+        showMessageError(errorText);
+    });
+
     connection.on("ReceiveMessage", (sender, message, timestamp) => {
         console.log("ReceiveMessage event:", { sender, message, timestamp, currentChatUserId, currentUserId });
         

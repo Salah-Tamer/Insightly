@@ -21,6 +21,8 @@ namespace Insightly.Models
             _logger = logger;
         }
 
+        private const int MaxMessageLength = 2000;
+
         public async Task SendPrivateMessage(string receiverId, string message)
         {
             try
@@ -30,6 +32,26 @@ namespace Insightly.Models
                 if (string.IsNullOrEmpty(senderId))
                 {
                     _logger.LogWarning("SendPrivateMessage called with null userId");
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(message))
+                {
+                    await Clients.Caller.SendAsync("MessageError", "Message cannot be empty.");
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(receiverId))
+                {
+                    await Clients.Caller.SendAsync("MessageError", "Invalid recipient.");
+                    return;
+                }
+
+                message = message.Trim();
+
+                if (message.Length > MaxMessageLength)
+                {
+                    await Clients.Caller.SendAsync("MessageError", $"Message exceeds the {MaxMessageLength} character limit.");
                     return;
                 }
 
