@@ -1,29 +1,17 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
-using Azure.Core;
 using Insightly.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.CodeAnalysis.Elfie.Serialization;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
-using System;
 using System.ComponentModel.DataAnnotations;
-using System.Composition;
-using System.Data;
-using System.Numerics;
-using System.Reflection.Metadata;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Encodings.Web;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace Insightly.Areas.Identity.Pages.Account
@@ -119,7 +107,7 @@ namespace Insightly.Areas.Identity.Pages.Account
                                             </div>
                                             
                                             <p style='margin: 30px 0 0 0; color: #6c757d; font-size: 14px; line-height: 20px; text-align: center;'>
-                                                This link will expire in <strong>24 hours</strong>.
+                                                This link will expire in <strong>1 hour</strong>.
                                             </p>
                                         </td>
                                     </tr>

@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
@@ -71,9 +71,9 @@ namespace Insightly.Areas.Identity.Pages.Account
             }
 
             var user = await _userManager.FindByEmailAsync(Input.Email);
-            if (user == null)
+            if (user == null || !user.EmailConfirmed)
             {
-                // Don't reveal that the user does not exist
+                // Don't reveal that the user does not exist or is unconfirmed
                 return RedirectToPage("./ResetPasswordConfirmation");
             }
 
