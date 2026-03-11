@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Insightly.Models;
@@ -41,8 +41,8 @@ namespace Insightly.Areas.Identity.Pages.Account
         public class InputModel
         {
             [Required(ErrorMessage = "Please enter the verification code")]
-            [StringLength(5, MinimumLength = 5, ErrorMessage = "Verification code must be 5 digits")]
-            [RegularExpression(@"^\d{5}$", ErrorMessage = "Verification code must be 5 digits")]
+            [StringLength(6, MinimumLength = 6, ErrorMessage = "Verification code must be 6 digits")]
+            [RegularExpression(@"^\d{6}$", ErrorMessage = "Verification code must be 6 digits")]
             [Display(Name = "Verification Code")]
             public string VerificationCode { get; set; }
         }
@@ -114,7 +114,6 @@ namespace Insightly.Areas.Identity.Pages.Account
                 }
             }
 
-            // Invalid code
             ModelState.AddModelError(string.Empty, "Invalid verification code. Please try again.");
             UserEmail = userEmail;
 
