@@ -11,20 +11,17 @@ namespace Insightly.Services
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IArticleRepository _articleRepository;
         private readonly IFollowRepository _followRepository;
-        private readonly IFileUploadService _fileUploadService;
         private readonly IMapper _mapper;
 
         public ProfileService(
             UserManager<ApplicationUser> userManager, 
             IArticleRepository articleRepository,
             IFollowRepository followRepository,
-            IFileUploadService fileUploadService, 
             IMapper mapper)
         {
             _userManager = userManager;
             _articleRepository = articleRepository;
             _followRepository = followRepository;
-            _fileUploadService = fileUploadService;
             _mapper = mapper;
         }
 
@@ -39,20 +36,7 @@ namespace Insightly.Services
             user.Name = model.Name;
             user.Bio = model.Bio;
 
-            if (model.ProfilePictureFile != null && model.ProfilePictureFile.Length > 0)
-            {
-                var (isValid, validationError) = await _fileUploadService.ValidateImageAsync(model.ProfilePictureFile);
-                if (!isValid)
-                {
-                    return (false, validationError ?? "Invalid image file.");
-                }
-
-                var profilePicturePath = await _fileUploadService.UploadProfilePictureAsync(model.ProfilePictureFile, userId);
-                if (profilePicturePath != null)
-                {
-                    user.ProfilePicture = profilePicturePath;
-                }
-            }
+            // TODO: Implement profile picture (pfp) upload logic
 
             var result = await _userManager.UpdateAsync(user);
             

@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Insightly.Models;
 using Insightly.Repositories;
 using Insightly.Services;
@@ -17,7 +17,6 @@ namespace Insightly.Controllers
         private readonly ICommentRepository _commentRepository;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IArticleService _articleService;
-        private readonly IFileUploadService _fileUploadService;
         private readonly IMapper _mapper;
 
         public ArticlesController(
@@ -27,7 +26,6 @@ namespace Insightly.Controllers
             ICommentRepository commentRepository,
             UserManager<ApplicationUser> userManager, 
             IArticleService articleService, 
-            IFileUploadService fileUploadService, 
             IMapper mapper)
         {
             _articleRepository = articleRepository;
@@ -36,7 +34,6 @@ namespace Insightly.Controllers
             _commentRepository = commentRepository;
             _userManager = userManager;
             _articleService = articleService;
-            _fileUploadService = fileUploadService;
             _mapper = mapper;
         }
 
@@ -59,18 +56,8 @@ namespace Insightly.Controllers
                     return Unauthorized();
                 }
 
+                // TODO: Implement article image upload logic
                 string? imagePath = null;
-                if (photo != null && photo.Length > 0)
-                {
-                    var (isValid, validationError) = await _fileUploadService.ValidateImageAsync(photo);
-                    if (!isValid)
-                    {
-                        ModelState.AddModelError("photo", validationError ?? "Invalid image file.");
-                        return View(viewModel);
-                    }
-
-                    imagePath = await _fileUploadService.UploadArticleImageAsync(photo);
-                }
 
                 // Create article using service
                 var (success, createError, createdArticle) = await _articleService.CreateArticleAsync(viewModel.Title, viewModel.Content, currentUser.Id, imagePath);
