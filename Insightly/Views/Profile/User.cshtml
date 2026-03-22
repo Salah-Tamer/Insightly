@@ -1,10 +1,7 @@
-@model Insightly.ViewModels.ProfileViewModel
-@inject UserManager<ApplicationUser> _userManager
+@model Insightly.ViewModels.PublicProfilePageViewModel
 
 @{
-    ViewData["Title"] = Model.Name + "'s Profile";
-    var articles = ViewBag.Articles as List<Insightly.Models.Article>;
-    var currentUserId = _userManager.GetUserId(User);
+    ViewData["Title"] = Model.Profile.Name + "'s Profile";
 }
 
 <style>
@@ -62,25 +59,24 @@
 <div class="home-page">
     <div class="row">
         <div class="col-12">
-            <!-- Navigation Breadcrumb -->
             <nav aria-label="breadcrumb" class="mb-3">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none" style="color: #ff4b37;">Home</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">@Model.Name's Profile</li>
+                    <li class="breadcrumb-item active" aria-current="page">@Model.Profile.Name's Profile</li>
                 </ol>
             </nav>
 
             <div class="card" style="border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
                 <div class="card-header" style="border-radius: 12px 12px 0 0; background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border-bottom: 1px solid #e9ecef;">
-                    <h4 class="mb-0">@Model.Name's Profile</h4>
+                    <h4 class="mb-0">@Model.Profile.Name's Profile</h4>
                 </div>
 
                 <div class="card-body" style="padding: 1.5rem;">
                     <div class="row">
                         <div class="col-md-3 text-center">
-                            @if (!string.IsNullOrEmpty(Model.ProfilePicture))
+                            @if (!string.IsNullOrEmpty(Model.Profile.ProfilePicture))
                             {
-                                <img src="@Model.ProfilePicture" alt="Profile Picture" class="img-fluid rounded-circle mb-3" style="width: 120px; height: 120px; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+                                <img src="@Model.Profile.ProfilePicture" alt="Profile Picture" class="img-fluid rounded-circle mb-3" style="width: 120px; height: 120px; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
                             }
                             else
                             {
@@ -92,38 +88,36 @@
                         <div class="col-md-9">
                             <div class="d-flex flex-column flex-md-row justify-content-between align-items-start">
                                 <div class="flex-grow-1">
-                                    <h5 class="card-title mb-2">@Model.Name</h5>
+                                    <h5 class="card-title mb-2">@Model.Profile.Name</h5>
                                     <p class="text-muted mb-2">
-                                        <i class="bi bi-calendar"></i> Member since @Model.CreatedAt.ToString("MMMM yyyy")
+                                        <i class="bi bi-calendar"></i> Member since @Model.Profile.CreatedAt.ToString("MMMM yyyy")
                                     </p>
                                     
-                                    <!-- Followers / Following Counts -->
                                     <div class="mb-3">
-                                        <span class="me-3"><strong>Followers:</strong> @ViewBag.FollowersCount</span>  
-                                        <span><strong>Following:</strong> @ViewBag.FollowingCount</span>
+                                        <span class="me-3"><strong>Followers:</strong> @Model.FollowersCount</span>  
+                                        <span><strong>Following:</strong> @Model.FollowingCount</span>
                                     </div>
                                 </div>
                                 
-                                <!-- Follow/Unfollow Button - Better positioned -->
-                                @if (User.Identity.IsAuthenticated && currentUserId != Model.Id)
+                                @if (Model.ShowFollowButton)
                                 {
                                     <div class="profile-actions">
-                                        <form asp-controller="Follow" asp-action="@(ViewBag.IsFollowing ? "Unfollow" : "Follow")" method="post" class="d-inline">
-                                            <input type="hidden" name="userId" value="@Model.Id" />
-                                            <button type="submit" class="btn follow-btn @(ViewBag.IsFollowing ? "btn-unfollow" : "btn-follow")">
-                                                <i class="bi bi-person-@(ViewBag.IsFollowing ? "dash" : "plus") me-1"></i>
-                                                @(ViewBag.IsFollowing ? "Unfollow" : "Follow")
+                                        <form asp-controller="Follow" asp-action="@(Model.IsFollowing ? "Unfollow" : "Follow")" method="post" class="d-inline">
+                                            <input type="hidden" name="userId" value="@Model.Profile.Id" />
+                                            <button type="submit" class="btn follow-btn @(Model.IsFollowing ? "btn-unfollow" : "btn-follow")">
+                                                <i class="bi bi-person-@(Model.IsFollowing ? "dash" : "plus") me-1"></i>
+                                                @(Model.IsFollowing ? "Unfollow" : "Follow")
                                             </button>
                                         </form>
                                     </div>
                                 }
                             </div>
                             
-                            @if (!string.IsNullOrEmpty(Model.Bio))
+                            @if (!string.IsNullOrEmpty(Model.Profile.Bio))
                             {
                                 <div class="mt-3 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border-radius: 8px; border: 1px solid #e9ecef;">
                                     <h6 class="mb-2" style="color: #495057;">Bio</h6>
-                                    <p class="text-muted mb-0" style="line-height: 1.6;">@Model.Bio</p>
+                                    <p class="text-muted mb-0" style="line-height: 1.6;">@Model.Profile.Bio</p>
                                 </div>
                             }
                         </div>
@@ -131,18 +125,17 @@
                 </div>
             </div>
 
-            <!-- User's Articles -->
             <div class="mt-4">
-                <h5 class="mb-3">@Model.Name's Articles</h5>
-                @if (articles != null && articles.Any())
+                <h5 class="mb-3">@Model.Profile.Name's Articles</h5>
+                @if (Model.Articles.Any())
                 {
                     <div class="d-flex flex-column gap-3" id="articlesContainer">
-                        @foreach (var article in articles.Take(10))
+                        @foreach (var article in Model.Articles.Take(10))
                         {
                             <div class="post-card d-flex article-item clickable-card"
                                  data-title="@article.Title.ToLower()"
                                  data-content="@article.Content.ToLower()"
-                                 data-author="@article.Author.Name.ToLower()"
+                                 data-author="@article.AuthorName.ToLower()"
                                  data-article-url="/Articles/Details/@article.ArticleId">
                                 <div class="vote-col d-flex flex-column align-items-center justify-content-start py-2">
                                     <button class="btn btn-link p-0 vote-btn upvote" data-article-id="@article.ArticleId" aria-label="Upvote">
@@ -155,7 +148,7 @@
                                 </div>
                                 <div class="flex-grow-1 p-3">
                                     <div class="d-flex align-items-center gap-2 mb-1 text-muted small">
-                                        <span>Posted by <a asp-controller="Profile" asp-action="ViewProfile" asp-route-id="@article.AuthorId" class="text-decoration-none fw-medium" style="color: #ff4b37 !important;">@article.Author.Name</a></span>
+                                        <span>Posted by <a asp-controller="Profile" asp-action="ById" asp-route-id="@article.AuthorId" class="text-decoration-none fw-medium no-card-nav" style="color: #ff4b37 !important;">@article.AuthorName</a></span>
                                         <span>•</span>
                                         <span>@article.CreatedAt.ToString("dd MMM yyyy")</span>
                                     </div>
@@ -170,10 +163,10 @@
                             </div>
                         }
                     </div>
-                    @if (articles.Count > 10)
+                    @if (Model.Articles.Count > 10)
                     {
                         <div class="text-center mt-3">
-                            <p class="text-muted">Showing 10 of @articles.Count articles</p>
+                            <p class="text-muted">Showing 10 of @Model.Articles.Count articles</p>
                         </div>
                     }
                 }
@@ -203,7 +196,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (e) {}
   });
 
-  // Fetch user vote status for each article (avoid duplicates)
   const processedArticles = new Set();
   document.querySelectorAll('.vote-btn').forEach(async btn => {
     const articleId = btn.getAttribute('data-article-id');
@@ -229,7 +221,6 @@ document.addEventListener('DOMContentLoaded', () => {
               if (upvoteBtn) upvoteBtn.classList.remove('active-up');
             }
           } else {
-            // Remove any existing active classes if user hasn't voted
             const upvoteBtn = document.querySelector(`.upvote[data-article-id="${articleId}"]`);
             const downvoteBtn = document.querySelector(`.downvote[data-article-id="${articleId}"]`);
             if (upvoteBtn) upvoteBtn.classList.remove('active-up');

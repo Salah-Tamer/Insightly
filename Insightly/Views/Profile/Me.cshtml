@@ -1,4 +1,4 @@
-@model Insightly.ViewModels.ProfileViewModel
+@model Insightly.ViewModels.MyProfilePageViewModel
 
 @{
     ViewData["Title"] = "My Profile";
@@ -10,16 +10,16 @@
         <div class="card" style="border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
             <div class="card-header d-flex justify-content-between align-items-center" style="border-radius: 12px 12px 0 0; background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border-bottom: 1px solid #e9ecef;">
                 <h4 class="mb-0">My Profile</h4>
-                <a asp-action="Edit" class="btn btn-outline-primary btn-sm" style="border-radius: 8px;">
+                <a asp-controller="Profile" asp-action="Edit" class="btn btn-outline-primary btn-sm" style="border-radius: 8px;">
                     <i class="bi bi-pencil"></i> Edit Profile
                 </a>
             </div>
             <div class="card-body" style="padding: 1.5rem;">
                 <div class="row">
                     <div class="col-md-3 text-center">
-                        @if (!string.IsNullOrEmpty(Model.ProfilePicture))
+                        @if (!string.IsNullOrEmpty(Model.Profile.ProfilePicture))
                         {
-                            <img src="@Model.ProfilePicture" alt="Profile Picture" class="img-fluid rounded-circle mb-3" style="width: 120px; height: 120px; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+                            <img src="@Model.Profile.ProfilePicture" alt="Profile Picture" class="img-fluid rounded-circle mb-3" style="width: 120px; height: 120px; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
                         }
                         else
                         {
@@ -29,22 +29,22 @@
                         }
                     </div>
                     <div class="col-md-9">
-                        <h5 class="card-title">@Model.Name</h5>
+                        <h5 class="card-title">@Model.Profile.Name</h5>
                         <p class="text-muted mb-2">
-                            <i class="bi bi-envelope"></i> @Model.Email
+                            <i class="bi bi-envelope"></i> @Model.Profile.Email
                         </p>
                         <p class="text-muted mb-2">
-                            <i class="bi bi-calendar"></i> Member since @Model.CreatedAt.ToString("MMMM yyyy")
+                            <i class="bi bi-calendar"></i> Member since @Model.Profile.CreatedAt.ToString("MMMM yyyy")
                         </p>
                             <div class="mb-3">
-                                <span class="me-3"><strong>Followers:</strong> @ViewBag.FollowersCount</span>
-                                <span><strong>Following:</strong> @ViewBag.FollowingCount</span>
+                                <span class="me-3"><strong>Followers:</strong> @Model.FollowersCount</span>
+                                <span><strong>Following:</strong> @Model.FollowingCount</span>
                             </div>
-                        @if (!string.IsNullOrEmpty(Model.Bio))
+                        @if (!string.IsNullOrEmpty(Model.Profile.Bio))
                         {
                             <div class="mt-3 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border-radius: 8px; border: 1px solid #e9ecef;">
                                 <h6 class="mb-2" style="color: #495057;">Bio</h6>
-                                <p class="text-muted mb-0" style="line-height: 1.6;">@Model.Bio</p>
+                                <p class="text-muted mb-0" style="line-height: 1.6;">@Model.Profile.Bio</p>
                             </div>
                         }
                     </div>
@@ -55,18 +55,15 @@
         <!-- User's Articles -->
         <div class="mt-4">
             <h5 class="mb-3">My Articles</h5>
-            @{
-                var userArticles = ViewBag.Articles as List<Insightly.Models.Article>;
-            }
-            @if (userArticles != null && userArticles.Any())
+            @if (Model.Articles.Any())
             {
                 <div class="d-flex flex-column gap-3" id="articlesContainer">
-                    @foreach (var article in userArticles.Take(5))
+                    @foreach (var article in Model.Articles.Take(5))
                     {
                         <div class="post-card d-flex article-item clickable-card"
                              data-title="@article.Title.ToLower()"
                              data-content="@article.Content.ToLower()"
-                             data-author="@article.Author.Name.ToLower()"
+                             data-author="@article.AuthorName.ToLower()"
                              data-article-url="/Articles/Details/@article.ArticleId">
                             <div class="vote-col d-flex flex-column align-items-center justify-content-start py-2">
                                 <button class="btn btn-link p-0 vote-btn upvote" data-article-id="@article.ArticleId" aria-label="Upvote">
@@ -79,7 +76,7 @@
                             </div>
                             <div class="flex-grow-1 p-3">
                                 <div class="d-flex align-items-center gap-2 mb-1 text-muted small">
-                                    <span>Posted by <a asp-controller="Profile" asp-action="ViewProfile" asp-route-id="@article.AuthorId" class="text-decoration-none fw-medium" style="color: #ff4b37 !important;">@article.Author.Name</a></span>
+                                    <span>Posted by <a asp-controller="Profile" asp-action="Me" class="text-decoration-none fw-medium no-card-nav" style="color: #ff4b37 !important;">@article.AuthorName</a></span>
                                     <span>•</span>
                                     <span>@article.CreatedAt.ToString("dd MMM yyyy")</span>
                                 </div>
@@ -87,17 +84,18 @@
                                 <p class="mb-3 text-muted">
                                     @article.Content.Substring(0, Math.Min(180, article.Content.Length))...
                                 </p>
-                                <div class="d-flex align-items-center justify-content-end">
+                                <div class="d-flex align-items-center justify-content-end gap-2 flex-wrap">
+                                    <a asp-controller="Articles" asp-action="Edit" asp-route-id="@article.ArticleId" class="btn btn-sm btn-outline-secondary no-card-nav">Edit</a>
                                     <a href="/Articles/Details/@article.ArticleId" class="btn btn-sm btn-outline-primary read-more-btn">Read more</a>
                                 </div>
                             </div>
                         </div>
                     }
                 </div>
-                @if (userArticles.Count > 5)
+                @if (Model.Articles.Count > 5)
                 {
                     <div class="text-center mt-3">
-                        <p class="text-muted small">Showing 5 of @userArticles.Count articles</p>
+                        <p class="text-muted small">Showing 5 of @Model.Articles.Count articles</p>
                     </div>
                 }
             }

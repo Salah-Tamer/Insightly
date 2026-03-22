@@ -1,4 +1,3 @@
-using Insightly.Models;
 using Insightly.ViewModels;
 
 namespace Insightly.Services
@@ -7,9 +6,11 @@ namespace Insightly.Services
     {
         Task<(bool Success, string? ErrorMessage)> UpdateProfileAsync(string userId, EditProfileViewModel model);
         Task<ProfileViewModel?> GetProfileViewModelAsync(string userId);
-        Task<(ProfileViewModel? Profile, List<ArticleListItemViewModel> Articles, int FollowersCount, int FollowingCount)> GetProfileWithDetailsAsync(string userId);
-        Task<(ProfileViewModel? Profile, List<ArticleListItemViewModel> Articles, int FollowersCount, int FollowingCount, bool IsFollowing)> GetProfileWithDetailsAsync(string userId, string? currentUserId);
+
+        Task<MyProfilePageViewModel?> GetMyProfilePageAsync(string userId);
+
+        Task<PublicProfileRequestResult> GetPublicProfilePageAsync(string targetUserId, string? viewerUserId);
+
+        Task<EditProfileViewModel?> GetEditProfileAsync(string userId);
     }
 }
-
-

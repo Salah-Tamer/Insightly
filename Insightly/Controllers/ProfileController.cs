@@ -1,26 +1,24 @@
-using Insightly.Models;
 using Insightly.Services;
 using Insightly.ViewModels;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
 namespace Insightly.Controllers
 {
     [Authorize]
+    [Route("profile")]
     public class ProfileController : Controller
     {
-        private readonly UserManager<ApplicationUser> _userManager;
         private readonly IProfileService _profileService;
 
-        public ProfileController(UserManager<ApplicationUser> userManager, IProfileService profileService)
+        public ProfileController(IProfileService profileService)
         {
-            _userManager = userManager;
             _profileService = profileService;
         }
 
-        public async Task<IActionResult> Index()
+        [HttpGet("me")]
+        public async Task<IActionResult> Me()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId == null)
@@ -28,19 +26,40 @@ namespace Insightly.Controllers
                 return NotFound();
             }
 
-            var (profile, articles, followersCount, followingCount) = await _profileService.GetProfileWithDetailsAsync(userId);
-            
-            if (profile == null)
+            var page = await _profileService.GetMyProfilePageAsync(userId);
+            if (page == null)
             {
                 return NotFound();
             }
 
-            ViewBag.Articles = articles;
-            ViewBag.FollowersCount = followersCount;
-            ViewBag.FollowingCount = followingCount;
-            return View(profile);
+            return View(page);
         }
 
+        [HttpGet("{id}")]
+        public async Task<IActionResult> ById(string id)
+        {
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            var result = await _profileService.GetPublicProfilePageAsync(id, currentUserId);
+            if (result.UserNotFound)
+            {
+                return NotFound();
+            }
+
+            if (result.ViewerIsOwner)
+            {
+                return RedirectToAction(nameof(Me));
+            }
+
+            if (result.Page == null)
+            {
+                return NotFound();
+            }
+
+            return View("User", result.Page);
+        }
+
+        [HttpGet("edit")]
         public async Task<IActionResult> Edit()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -48,26 +67,17 @@ namespace Insightly.Controllers
             {
                 return NotFound();
             }
-            
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
+
+            var model = await _profileService.GetEditProfileAsync(userId);
+            if (model == null)
             {
                 return NotFound();
             }
 
-            var model = new EditProfileViewModel
-            {
-                Name = user.Name,
-                ProfilePicture = user.ProfilePicture,
-                Bio = user.Bio,
-                Email = user.Email ?? string.Empty,
-                Gender = user.Gender
-            };
-
             return View(model);
         }
 
-        [HttpPost]
+        [HttpPost("edit")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(EditProfileViewModel model)
         {
@@ -83,7 +93,7 @@ namespace Insightly.Controllers
             }
 
             var (success, errorMessage) = await _profileService.UpdateProfileAsync(userId, model);
-            
+
             if (!success)
             {
                 ModelState.AddModelError(string.Empty, errorMessage ?? "Failed to update profile.");
@@ -91,29 +101,13 @@ namespace Insightly.Controllers
             }
 
             TempData["SuccessMessage"] = "Profile updated successfully!";
-            return RedirectToAction(nameof(Index));
-        }
-        public async Task<IActionResult> ViewProfile(string id)
-        {
-            var currentUser = await _userManager.GetUserAsync(User);
-            var currentUserId = currentUser?.Id;
-
-            var (profile, articles, followersCount, followingCount, isFollowing) = 
-                await _profileService.GetProfileWithDetailsAsync(id, currentUserId);
-
-            if (profile == null)
-            {
-                return NotFound();
-            }
-
-            ViewBag.Articles = articles;
-            ViewBag.FollowersCount = followersCount;
-            ViewBag.FollowingCount = followingCount;
-            ViewBag.IsFollowing = isFollowing;
-
-            return View(profile);
+            return RedirectToAction(nameof(Me));
         }
 
+        [HttpGet("/Profile/Index")]
+        public IActionResult LegacyIndex() => Redirect("/profile/me");
 
+        [HttpGet("/Profile/ViewProfile/{id}")]
+        public IActionResult LegacyViewProfile(string id) => Redirect($"/profile/{id}");
     }
 }

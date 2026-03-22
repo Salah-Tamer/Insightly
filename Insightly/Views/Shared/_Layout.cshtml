@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -145,7 +145,7 @@
                         <a class="list-group-item list-group-item-action" asp-controller="Home" asp-action="Index"><i class="bi bi-house me-2"></i>Home</a>
                         <a class="list-group-item list-group-item-action" asp-controller="Articles" asp-action="FollowingArticles"><i class="bi bi-people me-2"></i>Following</a>
                         <a class="list-group-item list-group-item-action" asp-controller="Articles" asp-action="Create"><i class="bi bi-plus-circle me-2"></i>Create Article</a>
-                        <a class="list-group-item list-group-item-action" asp-controller="Profile" asp-action="Index"><i class="bi bi-person me-2"></i>My Profile</a>
+                        <a class="list-group-item list-group-item-action" asp-controller="Profile" asp-action="Me"><i class="bi bi-person me-2"></i>My Profile</a>
                         <a class="list-group-item list-group-item-action" asp-controller="Articles" asp-action="SavedArticles"><i class="bi bi-bookmark me-2"></i>Saved Articles</a>
                         @if (User.IsInRole("Admin"))
                         {
@@ -165,7 +165,7 @@
                         <a class="nav-link" asp-controller="Home" asp-action="Index"><i class="bi bi-house me-2"></i>Home</a>
                         <a class="nav-link" asp-controller="Articles" asp-action="FollowingArticles"><i class="bi bi-people me-2"></i>Following</a>
                         <a class="nav-link" asp-controller="Articles" asp-action="Create"><i class="bi bi-plus-circle me-2"></i>Create Article</a>
-                        <a class="nav-link" asp-controller="Profile" asp-action="Index"><i class="bi bi-person me-2"></i>My Profile</a>
+                        <a class="nav-link" asp-controller="Profile" asp-action="Me"><i class="bi bi-person me-2"></i>My Profile</a>
                         <a class="nav-link" asp-controller="Chat" asp-action="Index"><i class="bi bi-chat-dots me-2"></i>Messages</a>
                         <a class="nav-link" asp-controller="Articles" asp-action="SavedArticles"><i class="bi bi-bookmark me-2"></i>Saved Articles</a>
                         @if (User.IsInRole("Admin"))
@@ -313,7 +313,7 @@
                             </div>
                             <div class="flex-grow-1 p-3">
                                 <div class="d-flex align-items-center gap-2 mb-1 text-muted small">
-                                    <span>Posted by <a href="/Profile/ViewProfile/${article.author.id}" class="text-decoration-none fw-medium" style="color: #ff4b37 !important;">${article.author.name}</a></span>
+                                    <span>Posted by <a href="/profile/${article.author.id}" class="text-decoration-none fw-medium" style="color: #ff4b37 !important;">${article.author.name}</a></span>
                                     <span>•</span>
                                     <span>${createdAt}</span>
                                 </div>
@@ -455,7 +455,7 @@
                 // Re-attach clickable card listeners
                 document.querySelectorAll('.clickable-card').forEach(card => {
                     card.addEventListener('click', function(e) {
-                        if (e.target.closest('.vote-btn') || e.target.closest('.read-more-btn')) {
+                        if (e.target.closest('.vote-btn') || e.target.closest('.read-more-btn') || e.target.closest('.no-card-nav')) {
                             return;
                         }
                         const articleUrl = this.getAttribute('data-article-url');
@@ -553,7 +553,7 @@
             document.querySelectorAll('.clickable-card').forEach(card => {
                 card.addEventListener('click', function(e) {
                     // Don't navigate if clicking on vote buttons or read more button
-                    if (e.target.closest('.vote-btn') || e.target.closest('.read-more-btn')) {
+                    if (e.target.closest('.vote-btn') || e.target.closest('.read-more-btn') || e.target.closest('.no-card-nav')) {
                         return;
                     }
                     

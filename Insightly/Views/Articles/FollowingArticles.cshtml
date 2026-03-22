@@ -30,7 +30,7 @@
                     </div>
                     <div class="flex-grow-1 p-3">
                         <div class="d-flex align-items-center gap-2 mb-1 text-muted small">
-                            <span>Posted by <a href="/Profile/ViewProfile/@article.AuthorId" class="text-decoration-none fw-medium" style="color: #ff4b37 !important;">@article.AuthorName</a></span>
+                            <span>Posted by <a href="/profile/@article.AuthorId" class="text-decoration-none fw-medium" style="color: #ff4b37 !important;">@article.AuthorName</a></span>
                             <span>•</span>
                             <span>@article.CreatedAt.ToString("dd MMM h:mm tt")</span>
                         </div>
@@ -58,7 +58,7 @@
             <p class="text-muted">Start following people to see their articles here, or check out the latest articles on the home page.</p>
             <div class="d-flex gap-2 justify-content-center">
                 <a asp-action="Index" asp-controller="Home" class="btn btn-primary">Go to Home</a>
-                <a asp-action="Index" asp-controller="Profile" class="btn btn-outline-secondary">Find People to Follow</a>
+                <a asp-action="Me" asp-controller="Profile" class="btn btn-outline-secondary">Find People to Follow</a>
             </div>
         </div>
     }

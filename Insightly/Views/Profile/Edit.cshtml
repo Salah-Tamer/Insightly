@@ -11,7 +11,7 @@
                 <h4 class="mb-0">Edit Profile</h4>
             </div>
             <div class="card-body">
-                <form asp-action="Edit" method="post" enctype="multipart/form-data">
+                <form asp-controller="Profile" asp-action="Edit" method="post" enctype="multipart/form-data">
                     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
                     
                     <div class="row">
@@ -62,7 +62,7 @@
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-check"></i> Save Changes
                         </button>
-                        <a asp-action="Index" class="btn btn-outline-secondary">
+                        <a asp-controller="Profile" asp-action="Me" class="btn btn-outline-secondary">
                             <i class="bi bi-x"></i> Cancel
                         </a>
                     </div>

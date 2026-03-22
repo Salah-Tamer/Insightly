@@ -1,4 +1,4 @@
-﻿using Insightly.Models;
+using Insightly.Models;
 using Insightly.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -27,7 +27,7 @@ namespace Insightly.Controllers
             if (currentUser.Id == userId)
             {
                 TempData["Error"] = "You cannot follow yourself.";
-                return RedirectToAction("ViewProfile", "Profile", new { id = userId });
+                return RedirectToAction("ById", "Profile", new { id = userId });
             }
 
             var alreadyFollowing = await _followRepository.ExistsAsync(currentUser.Id, userId);
@@ -43,7 +43,7 @@ namespace Insightly.Controllers
                 await _followRepository.AddAsync(follow);
             }
 
-            return RedirectToAction("ViewProfile", "Profile", new { id = userId });
+            return RedirectToAction("ById", "Profile", new { id = userId });
         }
 
         [HttpPost]
@@ -54,7 +54,7 @@ namespace Insightly.Controllers
 
             await _followRepository.DeleteByFollowerAndFollowingAsync(currentUser.Id, userId);
 
-            return RedirectToAction("ViewProfile", "Profile", new { id = userId });
+            return RedirectToAction("ById", "Profile", new { id = userId });
         }
     }
 }
