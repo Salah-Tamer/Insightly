@@ -27,7 +27,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddMemoryCache();
 
 // Register AutoMapper
-builder.Services.AddAutoMapper(typeof(Program).Assembly);
+builder.Services.AddAutoMapper(cfg => { }, typeof(Program));
 builder.Services.AddScoped<IVerificationCodeService, VerificationCodeService>();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddSignalR();
